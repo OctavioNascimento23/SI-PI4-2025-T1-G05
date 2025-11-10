@@ -6,5 +6,5 @@ Instruções:
 3. Crie um banco de dados
 4. Abra a Query Tool (alt+shift+q)
 5. Acesse o GitHub do projeto: 
-6. Execute o conteúdo do arquivo NextWork.sql
+6. Execute o conteúdo do arquivo CreateTable.sql
 7. Execute o conteúdo do arquivo Samples.sq
