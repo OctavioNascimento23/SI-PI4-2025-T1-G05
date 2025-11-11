@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 215 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 215 85% 60%;
+
+    --secondary: 155 65% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 15% 94%;
+    --muted-foreground: 215 15% 45%;
+
+    --accent: 215 85% 92%;
+    --accent-foreground: 215 85% 30%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 88%;
+    --input: 215 20% 88%;
+    --ring: 215 85% 45%;
+
+    --radius: 0.75rem;
+
+    --gradient-hero: linear-gradient(135deg, hsl(215 85% 45%), hsl(215 85% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(155 65% 45%), hsl(155 65% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%), hsl(215 20% 95%));
+    
+    --shadow-sm: 0 2px 8px hsl(215 25% 15% / 0.04);
+    --shadow-md: 0 4px 16px hsl(215 25% 15% / 0.08);
+    --shadow-lg: 0 8px 32px hsl(215 25% 15% / 0.12);
+    --shadow-glow: 0 0 40px hsl(215 85% 60% / 0.2);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 215 25% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 215 20% 12%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 215 20% 12%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 215 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 215 85% 65%;
+
+    --secondary: 155 65% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 20% 16%;
+    --muted-foreground: 215 15% 60%;
+
+    --accent: 215 85% 20%;
+    --accent-foreground: 215 85% 80%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 215 85% 55%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(215 85% 45%), hsl(215 85% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(155 65% 45%), hsl(155 65% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(215 25% 8%), hsl(215 20% 12%));
+    
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 40px hsl(215 85% 60% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .shadow-elegant {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-elegant-lg {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-success {
+    background: var(--gradient-success);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}
