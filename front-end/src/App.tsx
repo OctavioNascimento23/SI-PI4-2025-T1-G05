@@ -5,12 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import PainelDemo from "./pages/PainelDemo";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardConsultor from "./pages/DashboardConsultor";
 import PropostaConsultor from "./pages/PropostaConsultor";
 import PerfilCliente from "./pages/PerfilCliente";
 import Chat from "./pages/Chat";
+import BuscarConsultoria from "./pages/BuscarConsultoria";
+import SerConsultor from "./pages/SerConsultor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,9 +25,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/painel-demo" element={<PainelDemo />} />
+          <Route path="/seu-perfil" element={<DashboardEmpresa />} />
+          <Route path="/buscar-consultoria" element={<BuscarConsultoria />} />
+          <Route path="/ser-consultor" element={<SerConsultor />} />
           <Route path="/dashboard/empresa" element={<DashboardEmpresa />} />
           <Route path="/dashboard/consultor" element={<DashboardConsultor />} />
+          <Route path="/dashboard-consultor" element={<DashboardConsultor />} />
           <Route path="/proposta" element={<PropostaConsultor />} />
           <Route path="/perfil/cliente/:id" element={<PerfilCliente />} />
           <Route path="/chat/:id" element={<Chat />} />

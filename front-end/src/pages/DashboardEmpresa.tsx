@@ -2,13 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/Navbar";
-import { Plus, Calendar, User, TrendingUp, Clock, MessageSquare, BookOpen } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Plus, Calendar, User, TrendingUp, Clock, MessageSquare, BookOpen, UserCog, Edit, MapPin, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function DashboardEmpresa() {
   const navigate = useNavigate();
   
-  // Mock data
+  // Mock data - Perfil do Cliente
+  const perfilCliente = {
+    nome: "Tech Solutions Brasil",
+    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Tech Solutions",
+    setor: "Tecnologia",
+    localizacao: "São Paulo, SP",
+    sobreMim: "Empresa líder em soluções tecnológicas para o mercado corporativo. Buscamos sempre inovação e excelência em transformação digital para nossos clientes.",
+    membroDesde: "Janeiro 2024"
+  };
+  
   const projetos = [
     {
       id: 1,
@@ -86,10 +96,79 @@ export default function DashboardEmpresa() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Botão Aba do Consultor */}
+        <div className="mb-6">
+          <Button 
+            variant="hero" 
+            size="lg"
+            onClick={() => navigate('/dashboard/consultor')}
+            className="w-full sm:w-auto"
+          >
+            <UserCog className="w-5 h-5" />
+            Aba do Consultor
+          </Button>
+        </div>
+
+        {/* Perfil do Cliente */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-primary/10">
+                  <AvatarImage src={perfilCliente.avatar} alt={perfilCliente.nome} />
+                  <AvatarFallback className="text-2xl font-bold bg-gradient-hero text-primary-foreground">
+                    {perfilCliente.nome.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <Button 
+                  size="icon" 
+                  variant="secondary" 
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-elegant"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex-1 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-1">{perfilCliente.nome}</h2>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Building2 className="w-4 h-4" />
+                        <span>{perfilCliente.setor}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{perfilCliente.localizacao}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Membro desde {perfilCliente.membroDesde}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Perfil
+                  </Button>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Sobre Mim</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {perfilCliente.sobreMim}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Painel da Empresa</h1>
+            <h1 className="text-3xl font-bold mb-2">Painel do Cliente</h1>
             <p className="text-muted-foreground">Gerencie suas consultorias e projetos</p>
           </div>
           <Button variant="hero" size="lg" className="group">

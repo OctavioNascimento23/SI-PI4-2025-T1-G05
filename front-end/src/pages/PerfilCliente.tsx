@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 import { 
   Building2, 
   MapPin, 
@@ -13,10 +14,13 @@ import {
   Briefcase, 
   Star,
   MessageSquare,
-  TrendingUp
+  TrendingUp,
+  UserCog
 } from "lucide-react";
 
 export default function PerfilCliente() {
+  const navigate = useNavigate();
+  
   // Mock data
   const cliente = {
     nome: "Tech Solutions Brasil",
@@ -96,6 +100,19 @@ export default function PerfilCliente() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
+        {/* Botão Aba do Consultor */}
+        <div className="mb-6">
+          <Button 
+            variant="hero" 
+            size="lg"
+            onClick={() => navigate('/dashboard-consultor')}
+            className="w-full sm:w-auto"
+          >
+            <UserCog className="w-5 h-5" />
+            Aba do Consultor
+          </Button>
+        </div>
+
         {/* Header do Perfil */}
         <Card className="mb-8">
           <CardContent className="pt-6">

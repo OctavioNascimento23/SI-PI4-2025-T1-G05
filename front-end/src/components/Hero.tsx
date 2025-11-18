@@ -30,16 +30,16 @@ export const Hero = () => {
             do seu negócio através de diagnósticos inteligentes e suporte especializado.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Link to="/dashboard/empresa">
+          <div className="flex flex-col gap-4 justify-center items-center pt-4">
+            <Link to="/auth">
               <Button variant="hero" size="lg" className="group">
-                Encontrar Consultor
+                Começar!
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link to="/dashboard/consultor">
-              <Button variant="outline" size="lg">
-                Oferecer Consultoria
+            <Link to="/seu-perfil">
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                Visualizar sem login
               </Button>
             </Link>
           </div>

@@ -143,7 +143,7 @@ const Auth = () => {
         });
       }
 
-      navigate("/painel-demo");
+      navigate("/seu-perfil");
     }, 1500);
   };
 

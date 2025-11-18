@@ -16,11 +16,14 @@ export const Navbar = ({ minimal = false }: { minimal?: boolean }) => {
           
           {!minimal && (
             <div className="flex items-center gap-4">
-              <Link to="/dashboard/empresa">
-                <Button variant="ghost">Para Clientes</Button>
+              <Link to="/seu-perfil">
+                <Button variant="ghost">Seu Perfil</Button>
               </Link>
-              <Link to="/dashboard/consultor">
-                <Button variant="ghost">Para Consultores</Button>
+              <Link to="/buscar-consultoria">
+                <Button variant="ghost">Buscar Consultoria</Button>
+              </Link>
+              <Link to="/ser-consultor">
+                <Button variant="ghost">Ser Um Consultor</Button>
               </Link>
               <Link to="/auth">
                 <Button variant="default" size="sm">Entrar</Button>
