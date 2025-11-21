@@ -109,22 +109,20 @@ export const del = async <T = unknown>(
 };
 
 /**
- * Save authentication token and update client header
+ * Save authentication token
  * @param token - JWT token to store
+ * Note: Token will be automatically injected in requests via interceptor
  */
 export const setToken = (token: string): void => {
   saveToken(token);
-  // Update default header for future requests
-  apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 };
 
 /**
- * Clear authentication token and remove client header
+ * Clear authentication token
+ * Note: Requests will automatically stop including Authorization header
  */
 export const clearToken = (): void => {
   removeToken();
-  // Remove default header
-  delete apiClient.defaults.headers.common['Authorization'];
 };
 
 // Export the axios instance for advanced use cases
