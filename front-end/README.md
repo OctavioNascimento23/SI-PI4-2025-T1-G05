@@ -71,3 +71,56 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## API Integration
+
+This project includes a configured HTTP client for backend integration.
+
+### Configuration
+
+1. Copy the `.env.example` file to `.env.local`:
+   ```sh
+   cp .env.example .env.local
+   ```
+
+2. Configure the API URL in `.env.local`:
+   ```
+   VITE_API_URL=http://localhost:3001
+   ```
+
+### Using the API Client
+
+Import the configured axios instance from `src/services/api.ts`:
+
+```typescript
+import api from '@/services/api';
+
+// Example: Login
+const login = async (email: string, password: string) => {
+  try {
+    const response = await api.post('/api/auth/login', { email, password });
+    // Save token to localStorage
+    localStorage.setItem('auth_token', response.data.token);
+    return response.data;
+  } catch (error) {
+    console.error('Login failed:', error);
+    throw error;
+  }
+};
+
+// Example: Fetch user data (token automatically injected)
+const getUserProfile = async () => {
+  try {
+    const response = await api.get('/api/user/profile');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch profile:', error);
+    throw error;
+  }
+};
+```
+
+The API client automatically:
+- Injects the `Authorization: Bearer <token>` header from localStorage
+- Handles 401 errors by clearing the token
+- Uses the base URL from the environment variable
