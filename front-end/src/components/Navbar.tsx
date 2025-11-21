@@ -1,8 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
+import { isAuthenticated, clearToken } from "@/services/auth";
 
 export const Navbar = ({ minimal = false }: { minimal?: boolean }) => {
+  const navigate = useNavigate();
+  const authenticated = isAuthenticated();
+
+  const handleLogout = () => {
+    clearToken();
+    navigate('/');
+  };
+
   return (
     <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -25,9 +34,15 @@ export const Navbar = ({ minimal = false }: { minimal?: boolean }) => {
               <Link to="/ser-consultor">
                 <Button variant="ghost">Ser Um Consultor</Button>
               </Link>
-              <Link to="/auth">
-                <Button variant="default" size="sm">Entrar</Button>
-              </Link>
+              {authenticated ? (
+                <Button variant="default" size="sm" onClick={handleLogout}>
+                  Sair
+                </Button>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="default" size="sm">Entrar</Button>
+                </Link>
+              )}
             </div>
           )}
         </div>
