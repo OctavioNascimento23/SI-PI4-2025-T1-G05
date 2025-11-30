@@ -1,37 +1,62 @@
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { Users } from "lucide-react";
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from './Button';
+import { LogOut, User, Briefcase } from 'lucide-react';
 
-export const Navbar = ({ minimal = false }: { minimal?: boolean }) => {
+export function Navbar() {
+  const { user, usuario, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const getDashboardRoute = () => {
+    if (!user || !usuario) return '/';
+    return usuario.tipo_usuario === 'Comerciante' ? '/dashboard-empresa' : '/dashboard-consultor';
+  };
+
   return (
-    <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span>NextWork</span>
-          </Link>
-          
-          {!minimal && (
-            <div className="flex items-center gap-4">
-              <Link to="/seu-perfil">
-                <Button variant="ghost">Seu Perfil</Button>
-              </Link>
-              <Link to="/buscar-consultoria">
-                <Button variant="ghost">Buscar Consultoria</Button>
-              </Link>
-              <Link to="/ser-consultor">
-                <Button variant="ghost">Ser Um Consultor</Button>
-              </Link>
+    <nav className="bg-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to={getDashboardRoute()} className="flex items-center space-x-2">
+              <Briefcase className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">NextWork</span>
+            </Link>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <Link to={usuario?.tipo_usuario === 'Comerciante' ? '/dashboard-empresa' : '/dashboard-consultor'}>
+                  <Button variant="ghost" size="sm">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link to={usuario?.tipo_usuario === 'Comerciante' ? '/perfil-cliente' : '/perfil-consultor'}>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {usuario?.nome}
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+              </>
+            ) : (
               <Link to="/auth">
-                <Button variant="default" size="sm">Entrar</Button>
+                <Button variant="primary" size="sm">
+                  Entrar
+                </Button>
               </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
   );
-};
+}

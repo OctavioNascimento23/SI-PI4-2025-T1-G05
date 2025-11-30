@@ -1,73 +1,105 @@
-# Welcome to your Lovable project
+# NextWork - Plataforma de Consultoria Digital
 
-## Project info
+Plataforma que conecta pequenos negócios (comerciantes) com consultores especializados para transformação digital.
 
-**URL**: https://lovable.dev/projects/e3a50f65-0e91-409d-a6a1-7a9199d71e1f
+## Funcionalidades
 
-## How can I edit this code?
+- Autenticação de usuários (Comerciantes e Consultores)
+- Dashboard personalizado para cada tipo de usuário
+- Gestão de negócios
+- Sistema de diagnóstico digital
+- Roadmap de melhorias
+- Busca e solicitação de consultorias
+- Perfil de usuário
+- Conteúdo educativo
 
-There are several ways of editing your application.
+## Tecnologias
 
-**Use Lovable**
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: TailwindCSS
+- **Routing**: React Router DOM v6
+- **Forms**: React Hook Form + Zod
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e3a50f65-0e91-409d-a6a1-7a9199d71e1f) and start prompting.
+## Estrutura do Banco de Dados
 
-Changes made via Lovable will be committed automatically to this repo.
+### Tabelas
 
-**Use your preferred IDE**
+1. **usuario** - Informações dos usuários (Comerciantes e Consultores)
+2. **negocio** - Negócios cadastrados pelos comerciantes
+3. **diagnostico** - Diagnósticos digitais realizados
+4. **roadmap** - Planos de ação gerados a partir dos diagnósticos
+5. **consultoria** - Solicitações e agendamentos de consultoria
+6. **conteudo_educativo** - Materiais educativos
+7. **acompanhamento_conteudo** - Rastreamento de acesso ao conteúdo
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Configuração do Projeto
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 1. Instalar Dependências
 
-Follow these steps:
+\`\`\`bash
+npm install
+\`\`\`
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 2. Configurar Variáveis de Ambiente
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+As variáveis do Supabase já estão configuradas no arquivo `.env`:
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 3. Criar Schema do Banco de Dados
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Execute o script SQL abaixo no SQL Editor do Supabase:
+
+\`\`\`sql
+-- Criar tipos ENUM
+CREATE TYPE tipo_usuario_enum AS ENUM ('Comerciante', 'Consultor');
+CREATE TYPE plano_enum AS ENUM ('Gratuito', 'Premium');
+CREATE TYPE tipo_negocio_enum AS ENUM ('Bar', 'Padaria', 'Mercadinho');
+CREATE TYPE status_roadmap_enum AS ENUM ('Em andamento', 'Concluído');
+CREATE TYPE versao_acesso_enum AS ENUM ('Gratuito', 'Premium');
+
+-- Tabelas (veja o arquivo database-schema.sql para o schema completo)
+
+### 4. Executar o Projeto
+
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-**Edit a file directly in GitHub**
+O projeto estará disponível em `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Fluxo de Uso
 
-**Use GitHub Codespaces**
+### Para Comerciantes:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Criar conta como "Empresário/Comerciante"
+2. Fazer login
+3. Cadastrar negócio
+4. Realizar diagnóstico digital
+5. Visualizar roadmap de melhorias
+6. Buscar consultoria especializada
 
-## What technologies are used for this project?
+### Para Consultores:
 
-This project is built with:
+1. Criar conta como "Consultor"
+2. Fazer login
+3. Visualizar solicitações de consultoria
+4. Aceitar consultorias
+5. Gerenciar consultorias em andamento
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Segurança
 
-## How can I deploy this project?
+- Row Level Security (RLS) habilitado em todas as tabelas
+- Políticas de acesso baseadas em autenticação
+- Usuários só podem acessar seus próprios dados
+- Consultores só podem ver consultorias atribuídas a eles
 
-Simply open [Lovable](https://lovable.dev/projects/e3a50f65-0e91-409d-a6a1-7a9199d71e1f) and click on Share -> Publish.
+## Scripts Disponíveis
 
-## Can I connect a custom domain to my Lovable project?
+- `npm run dev` - Inicia servidor de desenvolvimento
+- `npm run build` - Cria build de produção
+- `npm run preview` - Preview do build de produção
+- `npm run lint` - Executa linter
+- `npm run typecheck` - Verifica tipos TypeScript
 
-Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

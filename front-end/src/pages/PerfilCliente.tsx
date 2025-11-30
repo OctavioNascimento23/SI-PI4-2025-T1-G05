@@ -1,310 +1,180 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/Navbar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
-import { 
-  Building2, 
-  MapPin, 
-  Mail, 
-  Phone, 
-  Globe, 
-  Calendar, 
-  Briefcase, 
-  Star,
-  MessageSquare,
-  TrendingUp,
-  UserCog
-} from "lucide-react";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useAuth } from '../contexts/AuthContext';
+import { usuarioService } from '../services/database';
+import { supabase } from '../lib/supabase';
+import { Card, CardContent, CardHeader } from '../components/Card';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { PhotoUpload } from '../components/PhotoUpload';
+import { User } from 'lucide-react';
 
-export default function PerfilCliente() {
-  const navigate = useNavigate();
-  
-  // Mock data
-  const cliente = {
-    nome: "Tech Solutions Brasil",
-    avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Tech Solutions",
-    setor: "Tecnologia",
-    localizacao: "São Paulo, SP",
-    email: "contato@techsolutions.com.br",
-    telefone: "+55 11 98765-4321",
-    website: "www.techsolutions.com.br",
-    dataCadastro: "Janeiro 2024",
-    descricao: "Empresa líder em soluções tecnológicas para o mercado corporativo, especializada em transformação digital e inovação.",
-    totalProjetos: 12,
-    projetosAtivos: 3,
-    avaliacaoMedia: 4.8,
-    totalGasto: "R$ 180.000"
+interface ProfileFormData {
+  nome: string;
+  telefone?: string;
+  foto_perfil_url?: string;
+  bio?: string;
+}
+
+export function PerfilCliente() {
+  const { usuario, user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(usuario?.foto_perfil_url || '');
+
+  const { register, handleSubmit, formState: { errors } } = useForm<ProfileFormData>({
+    defaultValues: {
+      nome: usuario?.nome || '',
+      telefone: usuario?.telefone || '',
+      foto_perfil_url: usuario?.foto_perfil_url || '',
+      bio: usuario?.bio || '',
+    }
+  });
+
+  const onSubmit = async (data: ProfileFormData) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      setSuccess(false);
+      await usuarioService.update(user.id, { ...data, foto_perfil_url: photoUrl });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erro ao atualizar perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const projetosRecentes = [
-    {
-      id: 1,
-      titulo: "Desenvolvimento de App Mobile",
-      consultor: "Maria Silva",
-      status: "Em andamento",
-      valor: "R$ 25.000",
-      inicio: "15/04/2024"
-    },
-    {
-      id: 2,
-      titulo: "Consultoria em Cloud Computing",
-      consultor: "João Santos",
-      status: "Concluído",
-      valor: "R$ 18.000",
-      inicio: "10/03/2024"
-    },
-    {
-      id: 3,
-      titulo: "Redesign de Plataforma Web",
-      consultor: "Ana Costa",
-      status: "Em andamento",
-      valor: "R$ 32.000",
-      inicio: "01/04/2024"
-    }
-  ];
+  const handlePhotoUploaded = async (url: string) => {
+    if (!user) return;
 
-  const avaliacoes = [
-    {
-      id: 1,
-      projeto: "Sistema de Gestão",
-      consultor: "Carlos Mendes",
-      nota: 5,
-      comentario: "Excelente trabalho! Superou nossas expectativas e entregou antes do prazo.",
-      data: "20/03/2024"
-    },
-    {
-      id: 2,
-      projeto: "Análise de Dados",
-      consultor: "Patricia Lima",
-      nota: 5,
-      comentario: "Profissionalismo exemplar e comunicação clara durante todo o projeto.",
-      data: "15/02/2024"
-    }
-  ];
+    try {
+      const { error } = await supabase
+        .from('usuario')
+        .update({ foto_perfil_url: url })
+        .eq('id_usuario', user.id);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Em andamento":
-        return "bg-blue-500";
-      case "Concluído":
-        return "bg-green-500";
-      default:
-        return "bg-gray-500";
+      if (error) throw error;
+
+      setPhotoUrl(url);
+    } catch (error: any) {
+      alert('Erro ao atualizar foto: ' + error.message);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Botão Aba do Consultor */}
-        <div className="mb-6">
-          <Button 
-            variant="hero" 
-            size="lg"
-            onClick={() => navigate('/dashboard-consultor')}
-            className="w-full sm:w-auto"
-          >
-            <UserCog className="w-5 h-5" />
-            Aba do Consultor
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center space-x-4">
+              <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                {usuario?.foto_perfil_url ? (
+                  <img
+                    src={usuario.foto_perfil_url}
+                    alt={usuario.nome}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="h-10 w-10 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
+                <p className="text-gray-600">Gerencie suas informações pessoais</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {success && (
+              <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                Perfil atualizado com sucesso!
+              </div>
+            )}
 
-        {/* Header do Perfil */}
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={cliente.avatar} alt={cliente.nome} />
-                <AvatarFallback>{cliente.nome.substring(0, 2)}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div>
-                    <h1 className="text-3xl font-bold mb-2">{cliente.nome}</h1>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <Badge variant="secondary">{cliente.setor}</Badge>
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {cliente.localizacao}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <Button variant="hero" size="lg">
-                    <MessageSquare className="w-4 h-4" />
-                    Enviar Mensagem
-                  </Button>
+            <div className="mb-6 flex justify-center">
+              {user && (
+                <PhotoUpload
+                  currentPhotoUrl={photoUrl}
+                  userId={user.id}
+                  onPhotoUploaded={handlePhotoUploaded}
+                />
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input
+                  label="Nome Completo"
+                  {...register('nome', { required: 'Nome é obrigatório' })}
+                  error={errors.nome?.message}
+                />
+
+                <Input
+                  label="Email"
+                  value={usuario?.email || ''}
+                  disabled
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <Input
+                  label="Telefone"
+                  {...register('telefone')}
+                  placeholder="(11) 99999-9999"
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de Usuário
+                  </label>
+                  <input
+                    type="text"
+                    value={usuario?.tipo_usuario || ''}
+                    disabled
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                  />
                 </div>
-                
-                <p className="text-muted-foreground mb-4">{cliente.descricao}</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span>{cliente.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span>{cliente.telefone}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <span>{cliente.website}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>Membro desde {cliente.dataCadastro}</span>
-                  </div>
-                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sobre seu Negócio
+                </label>
+                <textarea
+                  {...register('bio')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                  placeholder="Conte um pouco sobre seu negócio, produtos ou serviços..."
+                />
+              </div>
+
+              <div className="pt-4">
+                <Button type="submit" disabled={loading} className="w-full md:w-auto">
+                  {loading ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h2 className="text-lg font-semibold mb-4">Informações da Conta</h2>
+              <div className="space-y-2 text-sm">
+                <p className="text-gray-600">
+                  <span className="font-medium">Plano:</span> {usuario?.plano}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Membro desde:</span>{' '}
+                  {usuario?.created_at ? new Date(usuario.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total de Projetos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold">{cliente.totalProjetos}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Projetos Ativos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold">{cliente.projetosAtivos}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Avaliação Média
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                <span className="text-2xl font-bold">{cliente.avaliacaoMedia}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Investido
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold">{cliente.totalGasto}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Projetos Recentes */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Projetos Recentes</CardTitle>
-              <CardDescription>Histórico de consultorias contratadas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {projetosRecentes.map((projeto) => (
-                  <div
-                    key={projeto.id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold mb-1">{projeto.titulo}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Consultor: {projeto.consultor}
-                        </p>
-                      </div>
-                      <Badge className={getStatusColor(projeto.status)}>
-                        {projeto.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-3">
-                      <span className="font-semibold text-primary">{projeto.valor}</span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {projeto.inicio}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Avaliações */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Avaliações Recentes</CardTitle>
-              <CardDescription>Feedback fornecido pelo cliente</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {avaliacoes.map((avaliacao) => (
-                  <div
-                    key={avaliacao.id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold mb-1">{avaliacao.projeto}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          para {avaliacao.consultor}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {[...Array(avaliacao.nota)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className="w-4 h-4 text-yellow-500 fill-yellow-500"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      "{avaliacao.comentario}"
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {avaliacao.data}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

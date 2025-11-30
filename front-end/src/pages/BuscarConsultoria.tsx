@@ -1,198 +1,242 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Navbar } from "@/components/Navbar";
-import { Search, Star, Briefcase, MapPin, DollarSign, Award } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { usuarioService, consultoriaService } from '../services/database';
+import { Card, CardContent, CardHeader } from '../components/Card';
+import { Button } from '../components/Button';
+import { User, Star, X, Send, Briefcase, Mail, Phone } from 'lucide-react';
+import { Usuario } from '../lib/supabase';
 
-export default function BuscarConsultoria() {
+export function BuscarConsultoria() {
+  const { usuario } = useAuth();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [consultores, setConsultores] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [requesting, setRequesting] = useState<string | null>(null);
+  const [selectedConsultor, setSelectedConsultor] = useState<Usuario | null>(null);
+  const [descricao, setDescricao] = useState('');
 
-  // Mock data - lista expandida de consultores
-  const consultores = [
-    {
-      id: 1,
-      nome: "Ana Silva",
-      especialidade: "E-commerce & Vendas Online",
-      avaliacao: 4.9,
-      projetos: 47,
-      localizacao: "São Paulo, SP",
-      valorHora: "R$ 150 - R$ 250",
-      descricao: "Especialista em implementação de plataformas de e-commerce com foco em conversão e experiência do usuário.",
-      certificacoes: ["Google Analytics", "Facebook Blueprint", "Shopify Expert"],
-      disponibilidade: "Disponível"
-    },
-    {
-      id: 2,
-      nome: "Roberto Almeida",
-      especialidade: "Transformação Digital",
-      avaliacao: 4.9,
-      projetos: 52,
-      localizacao: "Rio de Janeiro, RJ",
-      valorHora: "R$ 200 - R$ 350",
-      descricao: "Consultor sênior com experiência em projetos de transformação digital para médias e grandes empresas.",
-      certificacoes: ["PMP", "Scrum Master", "ITIL"],
-      disponibilidade: "Disponível"
-    },
-    {
-      id: 3,
-      nome: "Julia Fernandes",
-      especialidade: "Marketing Digital & Estratégia",
-      avaliacao: 4.8,
-      projetos: 38,
-      localizacao: "Belo Horizonte, MG",
-      valorHora: "R$ 120 - R$ 200",
-      descricao: "Especialista em estratégias de marketing digital, SEO e gestão de campanhas de mídia paga.",
-      certificacoes: ["Google Ads", "HubSpot", "SEMrush"],
-      disponibilidade: "Disponível"
-    },
-    {
-      id: 4,
-      nome: "Pedro Oliveira",
-      especialidade: "Analytics & Business Intelligence",
-      avaliacao: 4.7,
-      projetos: 31,
-      localizacao: "Curitiba, PR",
-      valorHora: "R$ 180 - R$ 280",
-      descricao: "Especialista em análise de dados, dashboards e tomada de decisão baseada em dados.",
-      certificacoes: ["Power BI", "Tableau", "Google Data Studio"],
-      disponibilidade: "Ocupado"
-    },
-    {
-      id: 5,
-      nome: "Mariana Costa",
-      especialidade: "Automação de Processos",
-      avaliacao: 4.9,
-      projetos: 29,
-      localizacao: "Porto Alegre, RS",
-      valorHora: "R$ 140 - R$ 220",
-      descricao: "Consultora especializada em automação de processos empresariais e integração de sistemas.",
-      certificacoes: ["Zapier Expert", "Make.com", "UiPath"],
-      disponibilidade: "Disponível"
-    },
-    {
-      id: 6,
-      nome: "Carlos Santos",
-      especialidade: "Gestão de Projetos & Processos",
-      avaliacao: 4.8,
-      projetos: 44,
-      localizacao: "Brasília, DF",
-      valorHora: "R$ 160 - R$ 260",
-      descricao: "Gestor de projetos com foco em otimização de processos e aumento de eficiência operacional.",
-      certificacoes: ["PMP", "Lean Six Sigma", "Agile"],
-      disponibilidade: "Disponível"
+  useEffect(() => {
+    loadConsultores();
+  }, []);
+
+  const loadConsultores = async () => {
+    try {
+      const data = await usuarioService.getConsultores();
+      setConsultores(data);
+    } catch (error) {
+      console.error('Error loading consultores:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredConsultores = consultores.filter(consultor =>
-    consultor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    consultor.especialidade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    consultor.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleOpenModal = (consultor: Usuario) => {
+    setSelectedConsultor(consultor);
+    setDescricao('');
+  };
+
+  const handleCloseModal = () => {
+    setSelectedConsultor(null);
+    setDescricao('');
+  };
+
+  const handleSolicitarConsultoria = async () => {
+    if (!usuario || !selectedConsultor) return;
+
+    try {
+      setRequesting(selectedConsultor.id_usuario);
+      await consultoriaService.create({
+        id_usuario_comerciante: usuario.id_usuario,
+        id_usuario_consultor: selectedConsultor.id_usuario,
+        descricao: descricao.trim() || undefined,
+      });
+
+      alert('Solicitação de consultoria enviada com sucesso!');
+      handleCloseModal();
+      navigate('/dashboard-empresa');
+    } catch (error) {
+      console.error('Error requesting consultoria:', error);
+      alert('Erro ao solicitar consultoria');
+    } finally {
+      setRequesting(null);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Buscar Consultoria</h1>
-          <p className="text-muted-foreground">Encontre o consultor ideal para o seu projeto</p>
+          <h1 className="text-3xl font-bold text-gray-900">Buscar Consultoria</h1>
+          <p className="text-gray-600 mt-2">Encontre consultores especializados para ajudar seu negócio</p>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Buscar por nome, especialidade ou localização..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Consultores List */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {filteredConsultores.map((consultor) => (
-            <Card key={consultor.id} className="p-6 hover:shadow-elegant-lg transition-smooth">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-16 h-16 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-bold text-xl shrink-0">
-                  {consultor.nome.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {consultores.map((consultor) => (
+            <Card key={consultor.id_usuario}>
+              <CardHeader>
+                <div className="flex items-center space-x-4">
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div>
                     <h3 className="font-semibold text-lg">{consultor.nome}</h3>
-                    <Badge 
-                      variant="outline" 
-                      className={consultor.disponibilidade === "Disponível" ? "bg-secondary/10 text-secondary border-secondary/20" : "bg-muted text-muted-foreground"}
-                    >
-                      {consultor.disponibilidade}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-primary font-medium mb-2">{consultor.especialidade}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-secondary text-secondary" />
-                      <span className="font-medium">{consultor.avaliacao}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Briefcase className="w-4 h-4" />
-                      <span>{consultor.projetos} projetos</span>
+                    <div className="flex items-center text-yellow-500">
+                      <Star className="h-4 w-4 fill-current" />
+                      <Star className="h-4 w-4 fill-current" />
+                      <Star className="h-4 w-4 fill-current" />
+                      <Star className="h-4 w-4 fill-current" />
+                      <Star className="h-4 w-4" />
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                {consultor.descricao}
-              </p>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span>{consultor.localizacao}</span>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Email:</span> {consultor.email}
+                  </p>
+                  {consultor.telefone && (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Telefone:</span> {consultor.telefone}
+                    </p>
+                  )}
+                  {consultor.bio && (
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {consultor.bio}
+                    </p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span>{consultor.valorHora}/hora</span>
-                </div>
-                <div className="flex items-start gap-2 text-sm">
-                  <Award className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <div className="flex flex-wrap gap-1">
-                    {consultor.certificacoes.map((cert, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {cert}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                variant="hero" 
-                size="sm" 
-                className="w-full"
-                onClick={() => navigate(`/perfil/cliente/${consultor.id}`)}
-              >
-                Ver Perfil Completo
-              </Button>
+                <Button
+                  className="w-full"
+                  onClick={() => handleOpenModal(consultor)}
+                >
+                  Solicitar Consultoria
+                </Button>
+              </CardContent>
             </Card>
           ))}
         </div>
 
-        {filteredConsultores.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum consultor encontrado com esses critérios.</p>
-          </div>
+        {consultores.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-gray-600">Nenhum consultor disponível no momento</p>
+            </CardContent>
+          </Card>
         )}
-      </main>
+      </div>
+
+      {selectedConsultor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl">
+              <div className="flex justify-between items-start">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{selectedConsultor.nome}</h2>
+                    <p className="text-blue-100 mt-1">Consultor Profissional</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < Math.floor(selectedConsultor.nota_media || 0)
+                              ? 'fill-yellow-300 text-yellow-300'
+                              : 'text-white/30'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-sm ml-2 text-blue-100">
+                        ({selectedConsultor.total_avaliacoes || 0} avaliações)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedConsultor.email}</p>
+                  </div>
+                </div>
+                {selectedConsultor.telefone && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <Phone className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Telefone</p>
+                      <p className="text-sm font-medium text-gray-900">{selectedConsultor.telefone}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedConsultor.bio && (
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4" />
+                    Sobre o Consultor
+                  </h3>
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedConsultor.bio}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Descreva sua necessidade
+                </label>
+                <textarea
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  placeholder="Conte um pouco sobre seu negócio e o que você precisa. Quanto mais detalhes, melhor o consultor poderá te ajudar..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={6}
+                  maxLength={1000}
+                />
+                <p className="text-xs text-gray-500 mt-1 text-right">
+                  {descricao.length}/1000 caracteres
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleSolicitarConsultoria}
+                  disabled={requesting === selectedConsultor.id_usuario}
+                  className="flex-1"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {requesting === selectedConsultor.id_usuario ? 'Enviando...' : 'Enviar Solicitação'}
+                </Button>
+                <Button
+                  onClick={handleCloseModal}
+                  variant="outline"
+                  disabled={requesting === selectedConsultor.id_usuario}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
