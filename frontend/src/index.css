@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+  transition: all 0.2s ease;
+}
+
+body {
+  @apply bg-indigo-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Animação de gradiente para fundos */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-animated {
+  background: linear-gradient(-45deg, #2563EB, #3B82F6, #8B5CF6, #A855F7);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Animações suaves para hover */
+.card-hover {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.card-hover:hover {
+  @apply transform -translate-y-1;
+}
+
+/* Botões com efeito premium */
+.btn-primary {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.btn-primary:hover {
+  @apply transform scale-105 shadow-lg;
+}
+
+.btn-primary:active {
+  @apply transform scale-100;
+}

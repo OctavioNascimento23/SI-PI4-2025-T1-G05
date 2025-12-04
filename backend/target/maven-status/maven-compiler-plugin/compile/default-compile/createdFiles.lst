@@ -1,0 +1,8 @@
+com\consultoria\app\model\Project.class
+com\consultoria\app\model\Project$ProjectStatus.class
+com\consultoria\app\repository\StatusHistoryRepository.class
+com\consultoria\app\controller\StatusHistoryController$ErrorResponse.class
+com\consultoria\app\model\Project$Priority.class
+com\consultoria\app\repository\ChatMessageRepository.class
+com\consultoria\app\service\ProjectService.class
+com\consultoria\app\controller\StatusHistoryController.class
