@@ -86,17 +86,22 @@ class TCPClient {
                 data
             };
 
+            console.log('📤 tcpClient.send - Enviando:', JSON.stringify(message, null, 2));
+
             // Adiciona callback
             const timeout = setTimeout(() => {
                 this.callbacks.delete(requestId);
+                console.error('⏱️ Timeout: servidor não respondeu para requestId:', requestId);
                 reject(new Error('Timeout: servidor não respondeu'));
             }, 30000); // 30 segundos
 
             this.callbacks.set(requestId, (response) => {
                 clearTimeout(timeout);
+                console.log('📩 tcpClient.send - Resposta recebida:', response);
                 if (response.success) {
                     resolve(response);
                 } else {
+                    console.error('❌ tcpClient.send - Erro na resposta:', response.message);
                     reject(new Error(response.message || 'Erro desconhecido'));
                 }
             });
@@ -104,6 +109,7 @@ class TCPClient {
             const messageStr = JSON.stringify(message);
 
             if (this.connected && this.socket.readyState === WebSocket.OPEN) {
+                console.log('✅ WebSocket OPEN - Enviando agora');
                 this.socket.send(messageStr);
             } else {
                 // Adiciona à fila se desconectado

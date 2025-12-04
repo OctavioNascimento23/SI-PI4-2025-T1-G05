@@ -40,10 +40,14 @@ public class ClientHandler implements Runnable {
             String inputLine;
             while (running && (inputLine = in.readLine()) != null) {
                 try {
+                    // Log do JSON bruto recebido
+                    log.debug("📥 JSON bruto recebido: {}", inputLine);
+                    
                     // Decodifica mensagem
                     Message message = Protocol.decode(inputLine);
 
                     if (!Protocol.isValid(message)) {
+                        log.warn("❌ Mensagem inválida recebida: {}", inputLine);
                         Response errorResponse = Protocol.createError(
                                 message != null ? message.getRequestId() : "unknown",
                                 "Mensagem inválida");
@@ -51,8 +55,8 @@ public class ClientHandler implements Runnable {
                         continue;
                     }
 
-                    log.info("Comando recebido: {} de {}",
-                            message.getType(), clientSocket.getInetAddress());
+                    log.info("🔄 Comando - Tipo: {}, RequestId: {}, SessionId: {}",
+                            message.getType(), message.getRequestId(), message.getSessionId());
 
                     // Processa comando
                     Response response = processCommand(message);
@@ -87,15 +91,20 @@ public class ClientHandler implements Runnable {
         String commandType = message.getType();
         CommandHandler handler = commandHandlers.get(commandType);
 
+        log.debug("🔍 Handlers registrados: {}", commandHandlers.keySet());
+
         if (handler == null) {
+            log.error("❌ Handler não encontrado para: {}", commandType);
             return Protocol.createError(message.getRequestId(),
                     "Comando desconhecido: " + commandType);
         }
 
+        log.info("✅ Executando handler {} para comando: {}", handler.getClass().getSimpleName(), commandType);
+
         try {
             return handler.handle(message, sessionManager);
         } catch (Exception e) {
-            log.error("Erro ao executar handler para " + commandType, e);
+            log.error("❌ ERRO ao executar handler {} para {}: {}", handler.getClass().getSimpleName(), commandType, e.getMessage(), e);
             return Protocol.createError(message.getRequestId(),
                     "Erro ao processar comando: " + e.getMessage());
         }

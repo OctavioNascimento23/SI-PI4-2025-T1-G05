@@ -102,6 +102,47 @@ class TCPService {
         }, this.sessionId);
     }
 
+    // ===== CHAT =====
+
+    async getChatMessages(projectId) {
+        await this.init();
+        
+        this.sessionId = localStorage.getItem('sessionId');
+        
+        const response = await tcpClient.send('CHAT', {
+            action: 'GET_MESSAGES',
+            projectId: parseInt(projectId)
+        }, this.sessionId);
+
+        return response.data.messages || [];
+    }
+
+    async acceptProject(projectId) {
+        await this.init();
+        this.sessionId = localStorage.getItem('sessionId');
+        
+        const response = await tcpClient.send('CHAT', {
+            action: 'ACCEPT_PROJECT',
+            projectId: parseInt(projectId)
+        }, this.sessionId);
+        
+        return response;
+    }
+
+    async sendChatMessage(projectId, content) {
+        await this.init();
+        
+        this.sessionId = localStorage.getItem('sessionId');
+        
+        const response = await tcpClient.send('CHAT', {
+            action: 'SEND_MESSAGE',
+            projectId: parseInt(projectId),
+            content: content
+        }, this.sessionId);
+        
+        return response.data;
+    }
+
     // ===== UTILIDADES =====
 
     isAuthenticated() {

@@ -1,14 +1,12 @@
-import api from './api';
+import tcpService from './TCPService';
 
 const chatService = {
     sendMessage: async (projectId, content) => {
-        const response = await api.post(`/chat/${projectId}/messages`, { content });
-        return response.data;
+        return tcpService.sendChatMessage(projectId, content);
     },
 
     getMessages: async (projectId) => {
-        const response = await api.get(`/chat/${projectId}/messages`);
-        return response.data;
+        return tcpService.getChatMessages(projectId);
     }
 };
 

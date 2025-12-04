@@ -252,8 +252,8 @@ const UserDashboard = () => {
                                         key={request.id}
                                         className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800"
                                     >
-                                        <div className="flex items-start justify-between">
-                                            <div>
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+                                            <div className="mb-3 lg:mb-0">
                                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                                                     {request.name}
                                                 </h3>
@@ -269,11 +269,20 @@ const UserDashboard = () => {
                                                     <span>
                                                         {new Date(request.createdAt).toLocaleDateString('pt-BR')}
                                                     </span>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(request.status)}`}>
+                                                        {getStatusText(request.status)}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeColor(request.status)}`}>
-                                                {getStatusText(request.status)}
-                                            </span>
+                                            <Link
+                                                to={`/chat/${request.id}`}
+                                                className="px-5 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center space-x-2 self-start"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                </svg>
+                                                <span>Abrir Chat</span>
+                                            </Link>
                                         </div>
                                     </div>
                                 ))}

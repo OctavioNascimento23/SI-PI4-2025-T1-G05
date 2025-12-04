@@ -29,14 +29,6 @@ public class ChatService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        // Check if user has access to this project
-        boolean hasAccess = project.getUser().getId().equals(userId) ||
-                (project.getConsultant() != null && project.getConsultant().getId().equals(userId));
-
-        if (!hasAccess) {
-            throw new RuntimeException("Você não tem acesso a este projeto");
-        }
-
         ChatMessage message = new ChatMessage();
         message.setProject(project);
         message.setSender(user);
@@ -46,16 +38,8 @@ public class ChatService {
     }
 
     public List<ChatMessage> getMessagesByProjectId(Long projectId, Long userId) {
-        // Verify user has access to project
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
-
-        boolean hasAccess = project.getUser().getId().equals(userId) ||
-                (project.getConsultant() != null && project.getConsultant().getId().equals(userId));
-
-        if (!hasAccess) {
-            throw new RuntimeException("Você não tem acesso a este projeto");
-        }
 
         return chatMessageRepository.findByProjectIdOrderByTimestampAsc(projectId);
     }

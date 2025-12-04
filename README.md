@@ -1,4 +1,18 @@
-# Sistema de Consultoria - Guia Rápido
+   # Sistema de Consultoria - Guia Rápido
+
+##  ⚠️ IMPORTANTE: Chat Agora 100% TCP/IP!
+
+O sistema de chat foi **completamente migrado** de HTTP REST para **TCP/IP puro**.
+
+📚 **LEIA PRIMEIRO**: [`00_COMECE_AQUI.md`](./00_COMECE_AQUI.md) (5 minutos)
+
+Ou escolha por perfil:
+- 👨‍💼 **Gerente**: [`SUMARIO_EXECUTIVO.md`](./SUMARIO_EXECUTIVO.md)
+- 👨‍💻 **Desenvolvedor Backend**: [`RELATORIO_FINAL_CHAT_TCP.md`](./RELATORIO_FINAL_CHAT_TCP.md)
+- 👨‍💻 **Desenvolvedor Frontend**: [`ANTES_DEPOIS_DEMO.md`](./ANTES_DEPOIS_DEMO.md)
+- 🧪 **QA/Tester**: [`TEST_CHAT_TCP_COMPLETE.md`](./TEST_CHAT_TCP_COMPLETE.md)
+
+---
 
 ##  Sistema Funcionando!
 
@@ -107,3 +121,5 @@ Consulte os arquivos:
 ---
 
 **By Silveira**
+
+{"type":"AUTH","requestId":"req_1","sessionId":null,"data":{"action":"LOGIN","email":"cliente@teste.com","password":"senha123"}}

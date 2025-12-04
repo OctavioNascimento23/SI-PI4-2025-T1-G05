@@ -53,7 +53,7 @@ const ChatPage = () => {
             const messagesData = await chatService.getMessages(requestId);
             setMessages(messagesData);
         } catch (err) {
-            console.error('Error loading messages:', err);
+            console.error('Erro ao carregar mensagens:', err);
         }
     };
 
@@ -69,9 +69,10 @@ const ChatPage = () => {
         try {
             await chatService.sendMessage(requestId, message);
             setMessage('');
-            await loadMessages(); // Reload messages to show the new one
+            await loadMessages();
         } catch (err) {
-            alert('Erro ao enviar mensagem');
+            console.error('Erro:', err);
+            alert('Erro ao enviar: ' + (err.message || 'Desconhecido'));
         } finally {
             setSending(false);
         }
@@ -140,6 +141,7 @@ const ChatPage = () => {
                             </div>
                         </div>
 
+                        {/* Banner: Consultor precisa aceitar projeto */}
                         {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
                             {messages.length === 0 ? (
@@ -151,7 +153,7 @@ const ChatPage = () => {
                                 </div>
                             ) : (
                                 messages.map((msg) => {
-                                    const isOwnMessage = msg.sender.id === user?.userId;
+                                    const isOwnMessage = msg.sender.id === user?.id;
 
                                     return (
                                         <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
