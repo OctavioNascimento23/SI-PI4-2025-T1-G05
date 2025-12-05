@@ -77,8 +77,8 @@ Frontend: http://localhost:5173 (se ocupado, Vite usa a próxima porta, ex.: 517
 ## Créditos
 Grupo 05 - SI-PI4-2025-T1
 
-Gabriel dos Santos  24013743
-Felipe Lona  24007375
-João Pedro da Silveira  24010951
-Italo de Souza  24007472
-Octávio Nascimento 24015129
+- Gabriel dos Santos  24013743
+- Felipe Lona  24007375
+- João Pedro da Silveira  24010951
+- Italo de Souza  24007472
+- Octávio Nascimento 24015129
