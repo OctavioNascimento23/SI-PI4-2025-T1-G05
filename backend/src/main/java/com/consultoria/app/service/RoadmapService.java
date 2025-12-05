@@ -1,6 +1,13 @@
 package com.consultoria.app.service;
 
 import com.consultoria.app.dto.RoadmapDTO;
+import com.consultoria.app.model.Project;
+import com.consultoria.app.model.Roadmap;
+import com.consultoria.app.model.User;
+import com.consultoria.app.repository.ProjectRepository;
+import com.consultoria.app.repository.RoadmapRepository;
+import com.consultoria.app.repository.UserRepository;
+import com.google.gson.Gson;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -9,23 +16,33 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.properties.TextAlignment;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RoadmapService {
 
-    private static final String ROADMAP_DIRECTORY = "data/roadmaps/";
+    @Autowired
+    private RoadmapRepository roadmapRepository;
 
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private static final Gson gson = new Gson();
+
+    /**
+     * Gera PDF do roadmap em memória
+     */
     public byte[] generateRoadmapPdf(RoadmapDTO roadmap) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -129,39 +146,79 @@ public class RoadmapService {
         }
     }
 
-    public String saveRoadmapPdf(RoadmapDTO roadmap) {
-        try {
-            // Cria diretório se não existir
-            Path directory = Paths.get(ROADMAP_DIRECTORY);
-            if (!Files.exists(directory)) {
-                Files.createDirectories(directory);
-            }
+    /**
+     * Cria e salva roadmap no banco de dados
+     */
+    public Roadmap createRoadmap(Long projectId, Long userId, RoadmapDTO roadmapDTO) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-            // Gera nome único para o arquivo
-            String filename = "roadmap_" + roadmap.getProjectId() + "_" + System.currentTimeMillis() + ".pdf";
-            Path filePath = directory.resolve(filename);
+        byte[] pdfContent = generateRoadmapPdf(roadmapDTO);
+        String stepsJson = gson.toJson(roadmapDTO.getSteps());
 
-            // Gera e salva o PDF
-            byte[] pdfBytes = generateRoadmapPdf(roadmap);
-            try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
-                fos.write(pdfBytes);
-            }
+        Roadmap roadmap = new Roadmap();
+        roadmap.setProject(project);
+        roadmap.setCreatedBy(user);
+        roadmap.setTitle(roadmapDTO.getTitle());
+        roadmap.setDescription(roadmapDTO.getDescription());
+        roadmap.setPdfContent(pdfContent);
+        roadmap.setPdfFilename("roadmap_" + projectId + "_" + System.currentTimeMillis() + ".pdf");
+        roadmap.setStepsJson(stepsJson);
 
-            return filename;
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao salvar PDF do roadmap", e);
-        }
+        return roadmapRepository.save(roadmap);
     }
 
-    public byte[] getRoadmapPdf(String filename) {
-        try {
-            Path filePath = Paths.get(ROADMAP_DIRECTORY, filename);
-            if (!Files.exists(filePath)) {
-                throw new RuntimeException("Arquivo não encontrado: " + filename);
-            }
-            return Files.readAllBytes(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao ler PDF do roadmap", e);
-        }
+    /**
+     * Obtém roadmap por ID
+     */
+    public Roadmap getRoadmapById(Long roadmapId) {
+        return roadmapRepository.findById(roadmapId)
+                .orElseThrow(() -> new RuntimeException("Roadmap não encontrado"));
+    }
+
+    /**
+     * Obtém todos os roadmaps de um projeto
+     */
+    public List<Roadmap> getRoadmapsByProject(Long projectId) {
+        return roadmapRepository.findByProjectId(projectId);
+    }
+
+    /**
+     * Obtém todos os roadmaps criados por um usuário
+     */
+    public List<Roadmap> getRoadmapsByUser(Long userId) {
+        return roadmapRepository.findByCreatedById(userId);
+    }
+
+    /**
+     * Retorna o PDF do roadmap
+     */
+    public byte[] getRoadmapPdf(Long roadmapId) {
+        Roadmap roadmap = getRoadmapById(roadmapId);
+        return roadmap.getPdfContent();
+    }
+
+    /**
+     * Deleta um roadmap
+     */
+    public void deleteRoadmap(Long roadmapId) {
+        roadmapRepository.deleteById(roadmapId);
+    }
+
+    /**
+     * Atualiza roadmap
+     */
+    public Roadmap updateRoadmap(Long roadmapId, RoadmapDTO roadmapDTO) {
+        Roadmap roadmap = getRoadmapById(roadmapId);
+        
+        roadmap.setTitle(roadmapDTO.getTitle());
+        roadmap.setDescription(roadmapDTO.getDescription());
+        roadmap.setStepsJson(gson.toJson(roadmapDTO.getSteps()));
+        roadmap.setPdfContent(generateRoadmapPdf(roadmapDTO));
+
+        return roadmapRepository.save(roadmap);
     }
 }

@@ -51,6 +51,7 @@ com\consultoria\app\dto\RoadmapDTO.class
 com\consultoria\app\controller\ChatRestController$ErrorResponse.class
 com\consultoria\app\security\JwtAuthenticationFilter.class
 com\consultoria\app\service\ConsultantService.class
+com\consultoria\app\repository\RoadmapRepository.class
 com\consultoria\app\model\Evaluation.class
 com\consultoria\app\model\Experience.class
 com\consultoria\app\controller\ProjectController$SuccessResponse.class
@@ -66,6 +67,7 @@ com\consultoria\app\model\StatusHistory.class
 com\consultoria\app\tcp\TCPServer.class
 com\consultoria\app\repository\ConsultantProjectRepository.class
 com\consultoria\app\service\ProjectService.class
+com\consultoria\app\model\Roadmap.class
 com\consultoria\app\model\Request$RequestStatus.class
 com\consultoria\app\model\Request.class
 com\consultoria\app\tcp\Protocol$Response.class
