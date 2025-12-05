@@ -112,11 +112,10 @@ const RoadmapModal = ({ isOpen, onClose, projectId, projectName }) => {
         try {
             const token = localStorage.getItem('token');
 
-            // Envia roadmap e salva no servidor
-            const response = await axios.post(
-                `http://localhost:8080/api/roadmap/send?userId=${user?.userId}`,
+            // 1) Cria o roadmap no backend (persistido no banco)
+            const createResponse = await axios.post(
+                `http://localhost:8080/api/roadmap/create?projectId=${projectId}&userId=${user?.userId}`,
                 {
-                    projectId,
                     title: formData.title,
                     description: formData.description,
                     steps: formData.steps
@@ -125,6 +124,22 @@ const RoadmapModal = ({ isOpen, onClose, projectId, projectName }) => {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            const roadmapId = createResponse.data?.roadmapId;
+            if (!roadmapId) {
+                throw new Error('Não foi possível obter o ID do roadmap criado');
+            }
+
+            // 2) Envia mensagem no chat com link para download do roadmap
+            await axios.post(
+                `http://localhost:8080/api/roadmap/send?roadmapId=${roadmapId}&userId=${user?.userId}`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
                     }
                 }
             );
