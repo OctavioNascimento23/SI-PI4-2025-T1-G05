@@ -3,6 +3,8 @@ package com.consultoria.app.tcp;
 import com.consultoria.app.tcp.handler.CommandHandler;
 import com.consultoria.app.tcp.Protocol.Message;
 import com.consultoria.app.tcp.Protocol.Response;
+import com.consultoria.app.util.ConsultoriaLogger;
+import com.consultoria.app.util.ConsultoriaLogger.LogCategory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,22 +34,24 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+        String clientIp = clientSocket.getInetAddress().getHostAddress();
+        int clientPort = clientSocket.getPort();
+
         try (
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-            log.info("Cliente conectado: {}", clientSocket.getInetAddress());
+            
+            ConsultoriaLogger.logTCPConnection(clientIp, clientPort, "Cliente conectado", true);
 
             String inputLine;
             while (running && (inputLine = in.readLine()) != null) {
+                long startTime = System.currentTimeMillis();
                 try {
-                    // Log do JSON bruto recebido
-                    log.debug("📥 JSON bruto recebido: {}", inputLine);
-                    
                     // Decodifica mensagem
                     Message message = Protocol.decode(inputLine);
 
                     if (!Protocol.isValid(message)) {
-                        log.warn("❌ Mensagem inválida recebida: {}", inputLine);
+                        ConsultoriaLogger.logWarn(LogCategory.TCP_CLIENT, "Mensagem inválida recebida de %s:%d", clientIp, clientPort);
                         Response errorResponse = Protocol.createError(
                                 message != null ? message.getRequestId() : "unknown",
                                 "Mensagem inválida");
@@ -55,8 +59,8 @@ public class ClientHandler implements Runnable {
                         continue;
                     }
 
-                    log.info("🔄 Comando - Tipo: {}, RequestId: {}, SessionId: {}",
-                            message.getType(), message.getRequestId(), message.getSessionId());
+                    ConsultoriaLogger.logInfo(LogCategory.TCP_CLIENT, "Comando recebido: %s de %s:%d", 
+                            message.getType(), clientIp, clientPort);
 
                     // Processa comando
                     Response response = processCommand(message);
@@ -64,8 +68,12 @@ public class ClientHandler implements Runnable {
                     // Envia resposta
                     out.println(Protocol.encodeResponse(response));
 
+                    long duration = System.currentTimeMillis() - startTime;
+                    ConsultoriaLogger.logPerformance(LogCategory.TCP_CLIENT, 
+                            "Processamento de " + message.getType(), duration);
+
                 } catch (Exception e) {
-                    log.error("Erro ao processar mensagem", e);
+                    ConsultoriaLogger.logError(LogCategory.TCP_CLIENT, "Processar mensagem", e);
                     Response errorResponse = Protocol.createError("unknown",
                             "Erro interno: " + e.getMessage());
                     out.println(Protocol.encodeResponse(errorResponse));
@@ -73,13 +81,13 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (IOException e) {
-            log.error("Erro na conexão com cliente", e);
+            ConsultoriaLogger.logError(LogCategory.TCP_CLIENT, "Conexão com cliente", e);
         } finally {
             try {
                 clientSocket.close();
-                log.info("Cliente desconectado: {}", clientSocket.getInetAddress());
+                ConsultoriaLogger.logTCPConnection(clientIp, clientPort, "Cliente desconectado", false);
             } catch (IOException e) {
-                log.error("Erro ao fechar socket", e);
+                ConsultoriaLogger.logError(LogCategory.TCP_CLIENT, "Fechar socket", e);
             }
         }
     }
@@ -91,20 +99,15 @@ public class ClientHandler implements Runnable {
         String commandType = message.getType();
         CommandHandler handler = commandHandlers.get(commandType);
 
-        log.debug("🔍 Handlers registrados: {}", commandHandlers.keySet());
-
         if (handler == null) {
-            log.error("❌ Handler não encontrado para: {}", commandType);
             return Protocol.createError(message.getRequestId(),
                     "Comando desconhecido: " + commandType);
         }
 
-        log.info("✅ Executando handler {} para comando: {}", handler.getClass().getSimpleName(), commandType);
-
         try {
             return handler.handle(message, sessionManager);
         } catch (Exception e) {
-            log.error("❌ ERRO ao executar handler {} para {}: {}", handler.getClass().getSimpleName(), commandType, e.getMessage(), e);
+            log.error("Erro ao executar handler para " + commandType, e);
             return Protocol.createError(message.getRequestId(),
                     "Erro ao processar comando: " + e.getMessage());
         }

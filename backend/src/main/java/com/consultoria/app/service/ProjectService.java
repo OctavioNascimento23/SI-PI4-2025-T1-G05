@@ -1,3 +1,5 @@
+
+
 package com.consultoria.app.service;
 
 import com.consultoria.app.dto.ProjectDTO;
@@ -14,6 +16,36 @@ import java.util.Optional;
 
 @Service
 public class ProjectService {
+        /**
+         * Permite que apenas o primeiro consultor que acessar associe-se ao projeto.
+         * Se já houver consultor, só permite acesso ao consultor associado ou ao cliente dono.
+         */
+        @Transactional
+        public Project claimOrGetProjectForConsultant(Long projectId, Long userId) {
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+
+            // Se o usuário é o dono, pode acessar
+            if (project.getUser().getId().equals(userId)) {
+                return project;
+            }
+
+            // Se não tem consultor, associar este consultor
+            if (project.getConsultant() == null) {
+                User consultant = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Consultor não encontrado"));
+                project.setConsultant(consultant);
+                project.setStatus(Project.ProjectStatus.IN_PROGRESS);
+                return projectRepository.save(project);
+            }
+
+            // Se já tem consultor, só ele pode acessar
+            if (project.getConsultant().getId().equals(userId)) {
+                return project;
+            }
+
+            throw new RuntimeException("Projeto já está sendo atendido por outro consultor");
+        }
     @Autowired
     private ProjectRepository projectRepository;
 

@@ -78,10 +78,10 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getProjectById(@PathVariable Long id) {
+    public ResponseEntity<?> getProjectById(@PathVariable Long id, HttpServletRequest request) {
         try {
-            Project project = projectService.getProjectById(id)
-                    .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+            Long userId = getUserIdFromRequest(request);
+            Project project = projectService.claimOrGetProjectForConsultant(id, userId);
             return ResponseEntity.ok(ProjectResponse.fromProject(project));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));

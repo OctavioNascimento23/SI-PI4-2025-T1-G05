@@ -33,8 +33,8 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-light via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-            <div className="bg-white dark:bg-gray-800 p-10 rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-700 w-full max-w-md transition-all duration-300">
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+            <div className="bg-gray-800 p-10 rounded-2xl shadow-soft border border-gray-700 w-full max-w-md transition-all duration-300">
                 {/* Logo/Brand */}
                 <div className="flex justify-center mb-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -46,13 +46,13 @@ const LoginPage = () => {
 
                 {/* Title */}
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Entrar</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Bem-vindo de volta! Entre para continuar</p>
+                    <h2 className="text-3xl font-bold text-white mb-2">Entrar</h2>
+                    <p className="text-gray-400">Bem-vindo de volta! Entre para continuar</p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                    <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg">
+                    <div className="mb-4 p-3 bg-red-900/30 border border-red-800 text-red-300 rounded-lg">
                         {error}
                     </div>
                 )}
@@ -60,10 +60,10 @@ const LoginPage = () => {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Email</label>
                         <input
                             type="email"
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="seu@email.com"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -73,10 +73,10 @@ const LoginPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Senha</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Senha</label>
                         <input
                             type="password"
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -96,9 +96,9 @@ const LoginPage = () => {
 
                 {/* Signup Link */}
                 <div className="mt-6 text-center">
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-gray-400">
                         Não tem uma conta?{' '}
-                        <Link to="/register" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+                        <Link to="/register" className="text-blue-400 font-bold hover:underline">
                             Criar conta
                         </Link>
                     </p>

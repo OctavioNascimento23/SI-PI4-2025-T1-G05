@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import chatService from '../services/chatService';
+import RoadmapModal from '../components/modals/RoadmapModal';
+import tcpService from '../services/TCPService';
 import projectService from '../services/projectService';
 import authService from '../services/authService';
 
@@ -13,47 +14,71 @@ const ChatPage = () => {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState(false);
     const messagesEndRef = useRef(null);
+    const stopPollingRef = useRef(null);
 
     const user = authService.getCurrentUser();
 
     useEffect(() => {
         loadData();
-        // Poll for new messages every 3 seconds
-        const interval = setInterval(loadMessages, 3000);
-        return () => clearInterval(interval);
+        
+        // Inicia polling via TCP
+        console.log('[CHAT-PAGE] Iniciando polling via TCP');
+        stopPollingRef.current = tcpService.startChatPolling(
+            parseInt(requestId),
+            user?.userId,
+            (newMessages) => {
+                console.log(`[CHAT-PAGE] Mensagens atualizadas: ${newMessages.length}`);
+                setMessages(formatTCPMessages(newMessages));
+            },
+            3000
+        );
+
+        return () => {
+            // Para polling quando componente é desmontado
+            if (stopPollingRef.current) {
+                stopPollingRef.current();
+            }
+        };
     }, [requestId]);
 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
+    const formatTCPMessages = (tcpMessages) => {
+        return tcpMessages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            timestamp: msg.timestamp,
+            sender: {
+                id: msg.senderId,
+                name: msg.senderName
+            }
+        }));
+    };
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const [projectData, messagesData] = await Promise.all([
-                projectService.getProjectById(requestId),
-                chatService.getMessages(requestId)
-            ]);
+            console.log('[CHAT-PAGE] Carregando dados do projeto e mensagens via TCP');
+            
+            const projectData = await projectService.getProjectById(requestId);
+            const messagesResponse = await tcpService.getChatMessages(parseInt(requestId), user?.userId);
+            
             setProject(projectData);
-            setMessages(messagesData);
-        } catch (err) {
-            console.error(err);
-            if (err.response?.status === 400 || err.response?.status === 404) {
-                alert('Projeto não encontrado ou você não tem acesso');
-                navigate(user?.role === 'CONSULTANT' ? '/consultant/dashboard' : '/user/dashboard');
+            
+            if (messagesResponse.success && messagesResponse.data.messages) {
+                setMessages(formatTCPMessages(messagesResponse.data.messages));
+                console.log(`[CHAT-PAGE] ✓ ${messagesResponse.data.messages.length} mensagens carregadas`);
             }
+        } catch (err) {
+            console.error('[CHAT-PAGE] Erro ao carregar dados:', err);
+            alert('Projeto não encontrado ou você não tem acesso');
+            navigate(user?.role === 'CONSULTANT' ? '/consultant/dashboard' : '/user/dashboard');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const loadMessages = async () => {
-        try {
-            const messagesData = await chatService.getMessages(requestId);
-            setMessages(messagesData);
-        } catch (err) {
-            console.error('Erro ao carregar mensagens:', err);
         }
     };
 
@@ -67,12 +92,28 @@ const ChatPage = () => {
 
         setSending(true);
         try {
-            await chatService.sendMessage(requestId, message);
-            setMessage('');
-            await loadMessages();
+            console.log('[CHAT-PAGE] Enviando mensagem via TCP');
+            const response = await tcpService.sendChatMessage(
+                parseInt(requestId),
+                user?.userId,
+                message.trim()
+            );
+
+            if (response.success) {
+                console.log('[CHAT-PAGE] ✓ Mensagem enviada com sucesso');
+                setMessage('');
+                
+                // Atualiza mensagens imediatamente
+                const messagesResponse = await tcpService.getChatMessages(parseInt(requestId), user?.userId);
+                if (messagesResponse.success && messagesResponse.data.messages) {
+                    setMessages(formatTCPMessages(messagesResponse.data.messages));
+                }
+            } else {
+                alert('Erro ao enviar mensagem: ' + response.message);
+            }
         } catch (err) {
-            console.error('Erro:', err);
-            alert('Erro ao enviar: ' + (err.message || 'Desconhecido'));
+            console.error('[CHAT-PAGE] Erro ao enviar mensagem:', err);
+            alert('Erro ao enviar mensagem');
         } finally {
             setSending(false);
         }
@@ -81,6 +122,30 @@ const ChatPage = () => {
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const renderMessageContent = (content) => {
+        // Detecta URLs no texto
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = content.split(urlRegex);
+
+        return parts.map((part, index) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a
+                        key={index}
+                        href={part}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-blue-300 transition-colors font-semibold"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {part}
+                    </a>
+                );
+            }
+            return <span key={index}>{part}</span>;
+        });
     };
 
     const getStatusText = (status) => {
@@ -95,17 +160,17 @@ const ChatPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Carregando chat...</p>
+                    <p className="mt-4 text-gray-400">Carregando chat...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-900">
             <Navbar userName={user?.name} userRole={user?.role} />
 
             <div className="pt-16">
@@ -113,12 +178,12 @@ const ChatPage = () => {
                     {/* Main Chat Area */}
                     <div className="flex-1 flex flex-col">
                         {/* Chat Header */}
-                        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+                        <div className="bg-gray-800 border-b border-gray-700 p-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4">
                                     <Link
                                         to={user?.role === 'CONSULTANT' ? '/consultant/dashboard' : '/user/dashboard'}
-                                        className="text-gray-600 dark:text-gray-400 hover:text-blue-500 transition-colors"
+                                        className="text-gray-600 hover:text-blue-500 transition-colors"
                                     >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -130,20 +195,32 @@ const ChatPage = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                                        <h2 className="text-lg font-bold text-white">
                                             {project?.name}
                                         </h2>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        <p className="text-sm text-gray-400">
                                             {user?.role === 'CONSULTANT' ? project?.userName : project?.consultantName || 'Aguardando consultor'}
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* Botão Criar Roadmap - apenas para consultores */}
+                                {user?.role === 'CONSULTANT' && (
+                                    <button
+                                        onClick={() => setIsRoadmapModalOpen(true)}
+                                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg font-semibold hover:from-purple-600 hover:to-blue-600 transition-all flex items-center space-x-2 shadow-lg"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>Criar Roadmap</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
 
-                        {/* Banner: Consultor precisa aceitar projeto */}
                         {/* Messages Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-900">
                             {messages.length === 0 ? (
                                 <div className="text-center py-12">
                                     <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +230,7 @@ const ChatPage = () => {
                                 </div>
                             ) : (
                                 messages.map((msg) => {
-                                    const isOwnMessage = msg.sender.id === user?.id;
+                                    const isOwnMessage = msg.sender.id === user?.userId;
 
                                     return (
                                         <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
@@ -170,7 +247,7 @@ const ChatPage = () => {
                                                         <div
                                                             className={`px-4 py-3 rounded-2xl ${isOwnMessage
                                                                     ? 'bg-blue-500 text-white rounded-br-none'
-                                                                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-none'
+                                                                    : 'bg-gray-800 text-white border border-gray-700 rounded-bl-none'
                                                                 }`}
                                                         >
                                                             {!isOwnMessage && (
@@ -178,9 +255,9 @@ const ChatPage = () => {
                                                                     {msg.sender.name}
                                                                 </p>
                                                             )}
-                                                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                                            <p className="text-sm whitespace-pre-wrap">{renderMessageContent(msg.content)}</p>
                                                         </div>
-                                                        <p className={`text-xs mt-1 ${isOwnMessage ? 'text-right' : 'text-left'} text-gray-500 dark:text-gray-400`}>
+                                                        <p className={`text-xs mt-1 ${isOwnMessage ? 'text-right' : 'text-left'} text-gray-500`}>
                                                             {formatTimestamp(msg.timestamp)}
                                                         </p>
                                                     </div>
@@ -194,7 +271,7 @@ const ChatPage = () => {
                         </div>
 
                         {/* Input Area */}
-                        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                        <div className="bg-gray-800 border-t border-gray-700 p-4">
                             <form onSubmit={handleSendMessage}>
                                 <div className="flex items-end space-x-2">
                                     <div className="flex-1 relative">
@@ -209,7 +286,7 @@ const ChatPage = () => {
                                             }}
                                             placeholder="Digite sua mensagem..."
                                             rows="1"
-                                            className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 dark:text-white resize-none"
+                                            className="w-full px-4 py-3 bg-gray-700 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 text-white resize-none"
                                             style={{ maxHeight: '120px' }}
                                             disabled={sending}
                                         />
@@ -225,7 +302,7 @@ const ChatPage = () => {
                                         </svg>
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                <p className="text-xs text-gray-500 mt-2">
                                     Pressione Enter para enviar, Shift + Enter para nova linha
                                 </p>
                             </form>
@@ -233,33 +310,33 @@ const ChatPage = () => {
                     </div>
 
                     {/* Project Status Sidebar */}
-                    <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
+                    <div className="w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto">
                         <div className="p-6 space-y-6">
                             {/* Project Info */}
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                                <h3 className="text-lg font-bold text-white mb-4">
                                     Informações do Projeto
                                 </h3>
                                 <div className="space-y-3">
                                     <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Projeto</p>
-                                        <p className="font-semibold text-gray-900 dark:text-white">{project?.name}</p>
+                                        <p className="text-sm text-gray-400">Projeto</p>
+                                        <p className="font-semibold text-white">{project?.name}</p>
                                     </div>
                                     {project?.description && (
                                         <div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Descrição</p>
-                                            <p className="text-sm text-gray-900 dark:text-white">{project?.description}</p>
+                                            <p className="text-sm text-gray-400">Descrição</p>
+                                            <p className="text-sm text-white">{project?.description}</p>
                                         </div>
                                     )}
                                     <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Prioridade</p>
-                                        <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
+                                        <p className="text-sm text-gray-400">Prioridade</p>
+                                        <span className="inline-block px-2 py-1 bg-blue-900 text-blue-300 rounded text-sm font-medium">
                                             {project?.priority}
                                         </span>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                                        <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded text-sm font-medium">
+                                        <p className="text-sm text-gray-400">Status</p>
+                                        <span className="inline-block px-2 py-1 bg-green-900 text-green-300 rounded text-sm font-medium">
                                             {getStatusText(project?.status)}
                                         </span>
                                     </div>
@@ -269,10 +346,10 @@ const ChatPage = () => {
                             {/* Progress */}
                             <div>
                                 <div className="flex justify-between items-center mb-2">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white">Progresso</h4>
-                                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{project?.progress}%</span>
+                                    <h4 className="font-semibold text-white">Progresso</h4>
+                                    <span className="text-sm font-bold text-blue-400">{project?.progress}%</span>
                                 </div>
-                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                <div className="w-full bg-gray-700 rounded-full h-3">
                                     <div
                                         className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300"
                                         style={{ width: `${project?.progress}%` }}
@@ -283,14 +360,14 @@ const ChatPage = () => {
                             {/* Dates */}
                             <div className="space-y-3">
                                 <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Criado em</p>
-                                    <p className="font-medium text-gray-900 dark:text-white">
-                                        {new Date(project?.createdAt).toLocaleDateString('pt-BR')}
+                                    <p className="text-sm text-gray-400">Criado em</p>
+                                    <p className="font-medium text-white">
+                                        {project?.createdAt ? new Date(project.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Última atualização</p>
-                                    <p className="font-medium text-gray-900 dark:text-white">
+                                    <p className="text-sm text-gray-400">Última atualização</p>
+                                    <p className="font-medium text-white">
                                         {new Date(project?.updatedAt).toLocaleDateString('pt-BR')}
                                     </p>
                                 </div>
@@ -299,6 +376,14 @@ const ChatPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Roadmap Modal */}
+            <RoadmapModal
+                isOpen={isRoadmapModalOpen}
+                onClose={() => setIsRoadmapModalOpen(false)}
+                projectId={requestId}
+                projectName={project?.name}
+            />
         </div>
     );
 };

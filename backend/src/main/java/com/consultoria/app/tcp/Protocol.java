@@ -2,7 +2,6 @@ package com.consultoria.app.tcp;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import lombok.Data;
 
 /**
  * Protocolo de comunicação JSON sobre TCP/IP
@@ -11,7 +10,6 @@ import lombok.Data;
 public class Protocol {
     private static final Gson gson = new Gson();
 
-    @Data
     public static class Message {
         private String type;
         private String sessionId;
@@ -51,13 +49,52 @@ public class Protocol {
         }
     }
 
-    @Data
     public static class Response {
         private String type;
         private String requestId;
         private boolean success;
         private String message;
         private JsonObject data;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getRequestId() {
+            return requestId;
+        }
+
+        public void setRequestId(String requestId) {
+            this.requestId = requestId;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public JsonObject getData() {
+            return data;
+        }
+
+        public void setData(JsonObject data) {
+            this.data = data;
+        }
     }
 
     /**

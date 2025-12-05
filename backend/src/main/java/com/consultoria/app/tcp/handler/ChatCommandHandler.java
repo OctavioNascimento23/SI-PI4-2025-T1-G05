@@ -3,253 +3,271 @@ package com.consultoria.app.tcp.handler;
 import com.consultoria.app.model.ChatMessage;
 import com.consultoria.app.model.Project;
 import com.consultoria.app.model.User;
+import com.consultoria.app.repository.ChatMessageRepository;
 import com.consultoria.app.repository.ProjectRepository;
-import com.consultoria.app.service.ChatService;
+import com.consultoria.app.repository.UserRepository;
 import com.consultoria.app.tcp.Protocol;
 import com.consultoria.app.tcp.SessionManager;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Handler para comandos de chat (GET_CHAT_MESSAGES, SEND_CHAT_MESSAGE)
- * Processa mensagens de chat via TCP puro
+ * Handler para processamento de mensagens de chat via TCP/IP
  */
 @Component
 public class ChatCommandHandler implements CommandHandler {
     private static final Logger log = LoggerFactory.getLogger(ChatCommandHandler.class);
 
     @Autowired
-    private ChatService chatService;
+    private ChatMessageRepository chatMessageRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
 
-    private static final String COMMAND_TYPE = "CHAT";
-
-    public ChatCommandHandler() {
-        log.info("ChatCommandHandler instanciado pelo Spring");
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public String getCommandType() {
-        return COMMAND_TYPE;
+        return "CHAT";
     }
 
     @Override
     public Protocol.Response handle(Protocol.Message message, SessionManager sessionManager) {
-        log.info("ChatCommandHandler.handle() chamado para requestId: {}", message.getRequestId());
-        
-        User user = sessionManager.validateSession(message.getSessionId());
-        if (user == null) {
-            log.warn("Sessao invalida ou expirada: {}", message.getSessionId());
-            return Protocol.createError(message.getRequestId(), "Sessão inválida ou expirada");
-        }
-        
-        log.info("Sessao validada para usuario: {}", user.getEmail());
-
-        JsonObject data = message.getData();
-        if (data == null || !data.has("action")) {
-            log.warn("Campo 'action' nao encontrado no data: {}", data);
-            return Protocol.createError(message.getRequestId(),
-                    "Campo 'action' obrigatório (GET_MESSAGES, SEND_MESSAGE)");
-        }
-
-        String action = data.get("action").getAsString();
-        log.info("Action recebida: {}", action);
-
         try {
-            switch (action.toUpperCase()) {
+            JsonObject data = message.getData();
+            String action = data.has("action") ? data.get("action").getAsString() : "SEND";
+
+            log.info("====== CHAT COMMAND ======");
+            log.info("Action: {}", action);
+            log.info("Session ID: {}", message.getSessionId());
+            log.info("Project ID: {}", data.has("projectId") ? data.get("projectId").getAsLong() : "N/A");
+            log.info("==========================");
+
+            switch (action) {
+                case "SEND":
+                    return handleSendMessage(message, sessionManager);
+
                 case "GET_MESSAGES":
-                    log.info("Processando GET_MESSAGES");
-                    return handleGetMessages(message, user);
-                case "SEND_MESSAGE":
-                    log.info("Processando SEND_MESSAGE");
-                    return handleSendMessage(message, user);
-                case "ACCEPT_PROJECT":
-                    log.info("Processando ACCEPT_PROJECT");
-                    return handleAcceptProject(message, user);
+                    return handleGetMessages(message, sessionManager);
+
+                case "GET_PROJECTS_WITH_CHAT":
+                    return handleGetProjectsWithChat(message, sessionManager);
+
                 default:
-                    log.warn("Action invalida: {}", action);
-                    return Protocol.createError(message.getRequestId(),
-                            "Action inválida: " + action);
+                    log.warn("Ação desconhecida no CHAT: {}", action);
+                    return Protocol.createError(message.getRequestId(), "Ação desconhecida: " + action);
             }
+
         } catch (Exception e) {
-            log.error("Erro ao processar comando CHAT (action={}): {}", action, e.getMessage(), e);
-            return Protocol.createError(message.getRequestId(),
-                    "Erro ao processar comando: " + e.getMessage());
+            log.error("Erro ao processar comando CHAT", e);
+            return Protocol.createError(message.getRequestId(), "Erro ao processar chat: " + e.getMessage());
         }
     }
 
     /**
-     * Recupera mensagens de um projeto
-     * Validação: usuário deve ser owner do projeto ou consultant atribuído
+     * Processa envio de mensagem
      */
-    private Protocol.Response handleGetMessages(Protocol.Message message, User user) {
+    private Protocol.Response handleSendMessage(Protocol.Message message, SessionManager sessionManager) {
         JsonObject data = message.getData();
 
-        if (!data.has("projectId")) {
-            return Protocol.createError(message.getRequestId(),
-                    "Campo 'projectId' obrigatório");
-        }
-
-        Long projectId = data.get("projectId").getAsLong();
-
-        Project project = projectRepository.findById(projectId).orElse(null);
-        if (project == null) {
-            return Protocol.createError(message.getRequestId(),
-                    "Projeto não encontrado");
-        }
-
         try {
-            List<ChatMessage> messages = chatService.getMessagesByProjectId(projectId, user.getId());
-
-            JsonArray messagesArray = new JsonArray();
-            for (ChatMessage msg : messages) {
-                JsonObject msgObj = new JsonObject();
-                msgObj.addProperty("id", msg.getId());
-                msgObj.addProperty("content", msg.getContent());
-                msgObj.addProperty("timestamp", msg.getTimestamp().toString());
-
-                // Informações do sender
-                JsonObject senderObj = new JsonObject();
-                senderObj.addProperty("id", msg.getSender().getId());
-                senderObj.addProperty("name", msg.getSender().getName());
-                senderObj.addProperty("email", msg.getSender().getEmail());
-                msgObj.add("sender", senderObj);
-
-                messagesArray.add(msgObj);
+            // Valida dados necessários
+            if (!data.has("projectId") || !data.has("userId") || !data.has("content")) {
+                return Protocol.createError(message.getRequestId(), "Dados incompletos: projectId, userId e content são obrigatórios");
             }
 
-            JsonObject responseData = new JsonObject();
-            responseData.add("messages", messagesArray);
-            responseData.addProperty("projectId", projectId);
-            responseData.addProperty("projectStatus", project.getStatus().toString());
-            responseData.addProperty("consultantAssigned", project.getConsultant() != null);
+            Long projectId = data.get("projectId").getAsLong();
+            Long userId = data.get("userId").getAsLong();
+            String content = data.get("content").getAsString();
 
-            log.info("GET_MESSAGES: {} mensagens retornadas para projeto {}", messages.size(), projectId);
+            log.info("[CHAT-SEND] Enviando mensagem - Projeto: {}, Usuário: {}, Conteúdo: {}...", 
+                    projectId, userId, content.substring(0, Math.min(50, content.length())));
 
-            return Protocol.createSuccess(message.getRequestId(),
-                    "Mensagens recuperadas", responseData);
+            // Obtém projeto
+            Optional<Project> projectOpt = projectRepository.findById(projectId);
+            if (!projectOpt.isPresent()) {
+                log.warn("[CHAT-SEND] Projeto não encontrado: {}", projectId);
+                return Protocol.createError(message.getRequestId(), "Projeto não encontrado");
+            }
 
-        } catch (Exception e) {
-            log.error("Erro ao recuperar mensagens do projeto {}: {}", projectId, e.getMessage());
-            return Protocol.createError(message.getRequestId(),
-                    "Erro ao recuperar mensagens: " + e.getMessage());
-        }
-    }
+            Project project = projectOpt.get();
 
-    /**
-     * Envia nova mensagem de chat
-     */
-    private Protocol.Response handleSendMessage(Protocol.Message message, User user) {
-        JsonObject data = message.getData();
-        log.debug("Data recebida: {}", data);
+            // Obtém usuário
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (!userOpt.isPresent()) {
+                log.warn("[CHAT-SEND] Usuário não encontrado: {}", userId);
+                return Protocol.createError(message.getRequestId(), "Usuário não encontrado");
+            }
 
-        if (!data.has("projectId") || !data.has("content")) {
-            log.warn("Campos obrigatorios faltando. Has projectId: {}, Has content: {}", 
-                    data.has("projectId"), data.has("content"));
-            return Protocol.createError(message.getRequestId(),
-                    "Campos 'projectId' e 'content' obrigatórios");
-        }
+            User user = userOpt.get();
 
-        Long projectId = data.get("projectId").getAsLong();
-        String content = data.get("content").getAsString();
-        
-        log.info("SEND_MESSAGE recebida - ProjectId: {}, Usuario: {}, Content: {}", 
-                projectId, user.getEmail(), content);
+            // Verifica se o usuário tem acesso ao projeto
+            boolean hasAccess = project.getUser().getId().equals(userId) ||
+                    (project.getConsultant() != null && project.getConsultant().getId().equals(userId));
 
-        if (content == null || content.trim().isEmpty()) {
-            log.warn("Conteudo vazio ou null");
-            return Protocol.createError(message.getRequestId(),
-                    "Conteúdo da mensagem não pode estar vazio");
-        }
+            if (!hasAccess) {
+                log.warn("[CHAT-SEND] Acesso negado - Usuário {} não tem acesso ao Projeto {}", userId, projectId);
+                return Protocol.createError(message.getRequestId(), "Você não tem acesso a este projeto");
+            }
 
-        Project project = projectRepository.findById(projectId).orElse(null);
-        if (project == null) {
-            log.warn("Projeto nao encontrado: {}", projectId);
-            return Protocol.createError(message.getRequestId(),
-                    "Projeto não encontrado");
-        }
-        
-        log.info("Projeto encontrado: {}", project.getName());
+            // Cria e salva mensagem
+            ChatMessage chatMessage = new ChatMessage();
+            chatMessage.setProject(project);
+            chatMessage.setSender(user);
+            chatMessage.setContent(content);
+            chatMessage.setTimestamp(LocalDateTime.now());
 
-        try {
-            log.info("Persistindo mensagem via ChatService...");
-            ChatMessage savedMessage = chatService.sendMessage(projectId, user.getId(), content);
+            ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
 
+            log.info("[CHAT-SEND] ✓ Mensagem salva com sucesso - ID: {}, Projeto: {}, Usuário: {}", 
+                    savedMessage.getId(), projectId, user.getName());
+
+            // Prepara resposta
             JsonObject responseData = new JsonObject();
             responseData.addProperty("messageId", savedMessage.getId());
             responseData.addProperty("projectId", projectId);
+            responseData.addProperty("senderName", user.getName());
+            responseData.addProperty("content", savedMessage.getContent());
             responseData.addProperty("timestamp", savedMessage.getTimestamp().toString());
 
-            log.info("SEND_MESSAGE SUCCESS: Mensagem {} enviada por {} em projeto {}", 
-                    savedMessage.getId(), user.getEmail(), projectId);
+            return Protocol.createSuccess(message.getRequestId(), "Mensagem enviada com sucesso", responseData);
 
-            return Protocol.createSuccess(message.getRequestId(),
-                    "Mensagem enviada com sucesso", responseData);
-
-        } catch (RuntimeException e) {
-            log.error("RuntimeException ao enviar mensagem no projeto {}: {}", projectId, e.getMessage(), e);
-            return Protocol.createError(message.getRequestId(),
-                    "Erro ao enviar mensagem: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Exception GERAL ao enviar mensagem: {}", e.getMessage(), e);
-            return Protocol.createError(message.getRequestId(),
-                    "Erro inesperado: " + e.getMessage());
+            log.error("[CHAT-SEND] Erro ao enviar mensagem", e);
+            return Protocol.createError(message.getRequestId(), "Erro ao enviar mensagem: " + e.getMessage());
         }
     }
 
     /**
-     * Consultor aceita projeto e se atribui como responsável
+     * Processa obtenção de mensagens de um projeto
      */
-    private Protocol.Response handleAcceptProject(Protocol.Message message, User user) {
+    private Protocol.Response handleGetMessages(Protocol.Message message, SessionManager sessionManager) {
         JsonObject data = message.getData();
-        
-        if (!data.has("projectId")) {
-            log.warn("Campo projectId faltando");
-            return Protocol.createError(message.getRequestId(),
-                    "Campo 'projectId' obrigatório");
+
+        try {
+            if (!data.has("projectId") || !data.has("userId")) {
+                return Protocol.createError(message.getRequestId(), "projectId e userId são obrigatórios");
+            }
+
+            Long projectId = data.get("projectId").getAsLong();
+            Long userId = data.get("userId").getAsLong();
+
+            log.info("[CHAT-GET] Buscando mensagens - Projeto: {}, Usuário: {}", projectId, userId);
+
+            // Obtém projeto
+            Optional<Project> projectOpt = projectRepository.findById(projectId);
+            if (!projectOpt.isPresent()) {
+                log.warn("[CHAT-GET] Projeto não encontrado: {}", projectId);
+                return Protocol.createError(message.getRequestId(), "Projeto não encontrado");
+            }
+
+            Project project = projectOpt.get();
+
+            // Verifica acesso
+            boolean hasAccess = project.getUser().getId().equals(userId) ||
+                    (project.getConsultant() != null && project.getConsultant().getId().equals(userId));
+
+            if (!hasAccess) {
+                log.warn("[CHAT-GET] Acesso negado - Usuário {} não tem acesso ao Projeto {}", userId, projectId);
+                return Protocol.createError(message.getRequestId(), "Você não tem acesso a este projeto");
+            }
+
+            // Busca mensagens
+            List<ChatMessage> messages = chatMessageRepository.findByProjectIdOrderByTimestampAsc(projectId);
+
+            log.info("[CHAT-GET] ✓ {} mensagens encontradas no Projeto {}", messages.size(), projectId);
+
+            // Converte para JSON
+            JsonObject responseData = new JsonObject();
+            com.google.gson.JsonArray messagesArray = new com.google.gson.JsonArray();
+
+            for (ChatMessage msg : messages) {
+                JsonObject msgObj = new JsonObject();
+                msgObj.addProperty("id", msg.getId());
+                msgObj.addProperty("senderId", msg.getSender().getId());
+                msgObj.addProperty("senderName", msg.getSender().getName());
+                msgObj.addProperty("content", msg.getContent());
+                msgObj.addProperty("timestamp", msg.getTimestamp().toString());
+                messagesArray.add(msgObj);
+            }
+
+            responseData.add("messages", messagesArray);
+            responseData.addProperty("totalMessages", messages.size());
+
+            return Protocol.createSuccess(message.getRequestId(), "Mensagens recuperadas", responseData);
+
+        } catch (Exception e) {
+            log.error("[CHAT-GET] Erro ao obter mensagens", e);
+            return Protocol.createError(message.getRequestId(), "Erro ao obter mensagens: " + e.getMessage());
         }
+    }
 
-        Long projectId = data.get("projectId").getAsLong();
-        
-        log.info("Consultor {} tentando aceitar projeto {}", user.getEmail(), projectId);
+    /**
+     * Processa obtenção de projetos com chat ativo
+     */
+    private Protocol.Response handleGetProjectsWithChat(Protocol.Message message, SessionManager sessionManager) {
+        JsonObject data = message.getData();
 
-        if (user.getRole() != User.Role.CONSULTANT) {
-            log.warn("Usuario nao e consultor: {}", user.getRole());
-            return Protocol.createError(message.getRequestId(),
-                    "Apenas consultores podem aceitar projetos");
+        try {
+            if (!data.has("userId")) {
+                return Protocol.createError(message.getRequestId(), "userId é obrigatório");
+            }
+
+            Long userId = data.get("userId").getAsLong();
+
+            log.info("[CHAT-PROJECTS] Buscando projetos com chat para usuário: {}", userId);
+
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (!userOpt.isPresent()) {
+                return Protocol.createError(message.getRequestId(), "Usuário não encontrado");
+            }
+
+            // Busca projetos onde o usuário é cliente ou consultor
+            // e onde há um consultor designado (chat está ativo)
+            List<Project> projects = projectRepository.findAll();
+            com.google.gson.JsonArray projectsArray = new com.google.gson.JsonArray();
+
+            for (Project project : projects) {
+                boolean isParticipant = project.getUser().getId().equals(userId) ||
+                        (project.getConsultant() != null && project.getConsultant().getId().equals(userId));
+
+                if (isParticipant && project.getConsultant() != null) {
+                    JsonObject projObj = new JsonObject();
+                    projObj.addProperty("projectId", project.getId());
+                    projObj.addProperty("projectName", project.getName());
+                    projObj.addProperty("status", project.getStatus().toString());
+
+                    if (project.getUser().getId().equals(userId)) {
+                        projObj.addProperty("otherPartyName", project.getConsultant().getName());
+                        projObj.addProperty("otherPartyId", project.getConsultant().getId());
+                    } else {
+                        projObj.addProperty("otherPartyName", project.getUser().getName());
+                        projObj.addProperty("otherPartyId", project.getUser().getId());
+                    }
+
+                    projectsArray.add(projObj);
+                }
+            }
+
+            JsonObject responseData = new JsonObject();
+            responseData.add("projects", projectsArray);
+            responseData.addProperty("totalProjects", projectsArray.size());
+
+            log.info("[CHAT-PROJECTS] ✓ {} projetos encontrados para usuário {}", projectsArray.size(), userId);
+
+            return Protocol.createSuccess(message.getRequestId(), "Projetos recuperados", responseData);
+
+        } catch (Exception e) {
+            log.error("[CHAT-PROJECTS] Erro ao obter projetos com chat", e);
+            return Protocol.createError(message.getRequestId(), "Erro ao obter projetos: " + e.getMessage());
         }
-
-        Project project = projectRepository.findById(projectId).orElse(null);
-        if (project == null) {
-            log.warn("Projeto nao encontrado: {}", projectId);
-            return Protocol.createError(message.getRequestId(),
-                    "Projeto não encontrado");
-        }
-
-        project.setConsultant(user);
-        if (project.getStatus() == Project.ProjectStatus.PENDING) {
-            project.setStatus(Project.ProjectStatus.IN_PROGRESS);
-        }
-        
-        projectRepository.save(project);
-        
-        log.info("Projeto {} aceito por consultor {}", projectId, user.getEmail());
-
-        JsonObject responseData = new JsonObject();
-        responseData.addProperty("projectId", projectId);
-        responseData.addProperty("consultantId", user.getId());
-        responseData.addProperty("consultantName", user.getName());
-        responseData.addProperty("status", project.getStatus().toString());
-
-        return Protocol.createSuccess(message.getRequestId(),
-                "Projeto aceito com sucesso", responseData);
     }
 }

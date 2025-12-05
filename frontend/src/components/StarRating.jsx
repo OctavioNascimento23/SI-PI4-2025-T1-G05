@@ -15,9 +15,9 @@ const StarRating = ({ rating = 0, onRate, readonly = false, size = 'md' }) => {
                 <svg
                     key={star}
                     className={`${sizeClasses[size]} ${readonly
-                            ? (star <= rating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600')
+                            ? (star <= rating ? 'text-yellow-400' : 'text-gray-600')
                             : 'cursor-pointer transition-colors ' +
-                            (star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600')
+                            (star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-600')
                         }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"

@@ -27,10 +27,16 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            // Unauthorized - clear token and redirect to login
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // Unauthorized - only redirect if NOT on login/register pages
+            const currentPath = window.location.pathname;
+            
+            // Don't redirect if already on login or register page (to preserve error message)
+            if (currentPath !== '/login' && currentPath !== '/register') {
+                // Unauthorized - clear token and redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }

@@ -1,5 +1,4 @@
-
-
+# Sistema de Consultoria - Guia Rápido
 
 ##  Sistema Funcionando!
 
@@ -108,5 +107,3 @@ Consulte os arquivos:
 ---
 
 **By Silveira**
-
-{"type":"AUTH","requestId":"req_1","sessionId":null,"data":{"action":"LOGIN","email":"cliente@teste.com","password":"senha123"}}

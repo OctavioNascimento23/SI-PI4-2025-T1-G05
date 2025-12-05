@@ -104,43 +104,120 @@ class TCPService {
 
     // ===== CHAT =====
 
-    async getChatMessages(projectId) {
+    /**
+     * Envia uma mensagem de chat via TCP
+     * @param {number} projectId - ID do projeto
+     * @param {number} userId - ID do usuário remetente
+     * @param {string} content - Conteúdo da mensagem
+     */
+    async sendChatMessage(projectId, userId, content) {
+        console.log(`[TCP-CHAT] Enviando mensagem - Projeto: ${projectId}, Usuário: ${userId}`);
+        
         await this.init();
-        
-        this.sessionId = localStorage.getItem('sessionId');
-        
         const response = await tcpClient.send('CHAT', {
-            action: 'GET_MESSAGES',
-            projectId: parseInt(projectId)
+            action: 'SEND',
+            projectId,
+            userId,
+            content
         }, this.sessionId);
 
-        return response.data.messages || [];
-    }
+        if (response.success) {
+            console.log(`[TCP-CHAT] ✓ Mensagem enviada com sucesso - ID: ${response.data.messageId}`);
+        } else {
+            console.error(`[TCP-CHAT] ✗ Erro ao enviar mensagem: ${response.message}`);
+        }
 
-    async acceptProject(projectId) {
-        await this.init();
-        this.sessionId = localStorage.getItem('sessionId');
-        
-        const response = await tcpClient.send('CHAT', {
-            action: 'ACCEPT_PROJECT',
-            projectId: parseInt(projectId)
-        }, this.sessionId);
-        
         return response;
     }
 
-    async sendChatMessage(projectId, content) {
+    /**
+     * Obtém mensagens de um projeto via TCP
+     * @param {number} projectId - ID do projeto
+     * @param {number} userId - ID do usuário
+     */
+    async getChatMessages(projectId, userId) {
+        console.log(`[TCP-CHAT] Buscando mensagens - Projeto: ${projectId}, Usuário: ${userId}`);
+        
         await this.init();
-        
-        this.sessionId = localStorage.getItem('sessionId');
-        
         const response = await tcpClient.send('CHAT', {
-            action: 'SEND_MESSAGE',
-            projectId: parseInt(projectId),
-            content: content
+            action: 'GET_MESSAGES',
+            projectId,
+            userId
         }, this.sessionId);
+
+        if (response.success) {
+            const messageCount = response.data.messages ? response.data.messages.length : 0;
+            console.log(`[TCP-CHAT] ✓ ${messageCount} mensagens recuperadas`);
+        } else {
+            console.error(`[TCP-CHAT] ✗ Erro ao buscar mensagens: ${response.message}`);
+        }
+
+        return response;
+    }
+
+    /**
+     * Obtém projetos com chat ativo para o usuário via TCP
+     * @param {number} userId - ID do usuário
+     */
+    async getProjectsWithChat(userId) {
+        console.log(`[TCP-CHAT] Buscando projetos com chat ativo para usuário: ${userId}`);
         
-        return response.data;
+        await this.init();
+        const response = await tcpClient.send('CHAT', {
+            action: 'GET_PROJECTS_WITH_CHAT',
+            userId
+        }, this.sessionId);
+
+        if (response.success) {
+            const projectCount = response.data.projects ? response.data.projects.length : 0;
+            console.log(`[TCP-CHAT] ✓ ${projectCount} projetos com chat encontrados`);
+        } else {
+            console.error(`[TCP-CHAT] ✗ Erro ao buscar projetos: ${response.message}`);
+        }
+
+        return response;
+    }
+
+    /**
+     * Polling de mensagens - atualiza mensagens periodicamente
+     * @param {number} projectId - ID do projeto
+     * @param {number} userId - ID do usuário
+     * @param {function} callback - Função chamada com novas mensagens
+     * @param {number} interval - Intervalo em ms (padrão: 3000ms)
+     * @returns {function} - Função para parar o polling
+     */
+    startChatPolling(projectId, userId, callback, interval = 3000) {
+        console.log(`[TCP-CHAT] Iniciando polling de mensagens (intervalo: ${interval}ms)`);
+        
+        let lastMessageCount = 0;
+        
+        const poll = async () => {
+            try {
+                const response = await this.getChatMessages(projectId, userId);
+                if (response.success && response.data.messages) {
+                    const messages = response.data.messages;
+                    if (messages.length !== lastMessageCount) {
+                        console.log(`[TCP-CHAT] 📬 Novas mensagens detectadas: ${messages.length - lastMessageCount}`);
+                        callback(messages);
+                        lastMessageCount = messages.length;
+                    }
+                }
+            } catch (error) {
+                console.error('[TCP-CHAT] Erro no polling:', error);
+            }
+        };
+
+        // Busca imediata
+        poll();
+        
+        // Configura intervalo
+        const intervalId = setInterval(poll, interval);
+
+        // Retorna função para parar polling
+        return () => {
+            console.log('[TCP-CHAT] Parando polling de mensagens');
+            clearInterval(intervalId);
+        };
     }
 
     // ===== UTILIDADES =====

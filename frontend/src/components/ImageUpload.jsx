@@ -44,7 +44,7 @@ const ImageUpload = ({ onUpload, currentImage, label = "Upload Image" }) => {
     return (
         <div className="flex flex-col items-center space-y-3">
             {preview && (
-                <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gray-700">
                     <img
                         src={preview}
                         alt="Preview"

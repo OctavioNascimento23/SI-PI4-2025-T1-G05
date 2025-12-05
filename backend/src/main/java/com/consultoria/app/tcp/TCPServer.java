@@ -1,5 +1,16 @@
 package com.consultoria.app.tcp;
 
+import com.consultoria.app.tcp.handler.CommandHandler;
+import com.consultoria.app.util.ConsultoriaLogger;
+import com.consultoria.app.util.ConsultoriaLogger.LogCategory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,17 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import com.consultoria.app.tcp.handler.CommandHandler;
 
 /**
  * Servidor TCP/IP principal
@@ -41,40 +41,16 @@ public class TCPServer {
 
     @PostConstruct
     public void initialize() {
-        log.info("══════════════════════════════════════════════════════════════════════");
-        log.info("🚀 TCPServer.initialize() iniciado...");
-        
         // Registra command handlers
         if (commandHandlersList != null) {
-            log.info("🔧 DESCOBERTA: Encontrados {} CommandHandlers no Spring Context", commandHandlersList.size());
-            
-            int index = 1;
+            ConsultoriaLogger.logSeparator();
+            ConsultoriaLogger.logInfo(LogCategory.TCP_SERVER, "Registrando handlers de comandos...");
             for (CommandHandler handler : commandHandlersList) {
-                String commandType = handler.getCommandType();
-                commandHandlers.put(commandType, handler);
-                log.info("  [{}] ✅ Registrado - Tipo: '{}' | Classe: {} | HashCode: {}", 
-                        index, 
-                        commandType, 
-                        handler.getClass().getSimpleName(),
-                        handler.getClass().hashCode());
-                if (commandType.equals("CHAT")) {
-                    log.info("     🎯 CHAT Handler detectado e registrado com sucesso!");
-                }
-                index++;
+                commandHandlers.put(handler.getCommandType(), handler);
+                ConsultoriaLogger.logInfo(LogCategory.TCP_SERVER, "✓ Handler registrado: %s", handler.getCommandType());
             }
-            log.info("🎯 RESUMO: Total de handlers registrados = {}", commandHandlers.size());
-            log.info("📋 TIPOS DISPONÍVEIS: {}", commandHandlers.keySet());
-            
-            // Validação final
-            if (commandHandlers.containsKey("CHAT")) {
-                log.info("✅ VALIDAÇÃO OK: CHAT handler está disponível no mapa");
-            } else {
-                log.error("❌ VALIDAÇÃO FALHOU: CHAT handler NÃO está no mapa!");
-            }
-        } else {
-            log.error("❌ ERRO CRÍTICO: commandHandlersList é NULL! Nenhum handler será registrado.");
+            ConsultoriaLogger.logSeparator();
         }
-        log.info("══════════════════════════════════════════════════════════════════════");
 
         // Inicia servidor em thread separada
         serverThread = new Thread(this::start);
@@ -91,24 +67,31 @@ public class TCPServer {
             threadPool = Executors.newFixedThreadPool(20); // Pool de 20 threads
             running = true;
 
-            log.info("===========================================");
-            log.info("Servidor TCP/IP iniciado na porta {}", port);
-            log.info("Aguardando conexões...");
-            log.info("===========================================");
+            ConsultoriaLogger.logSeparator();
+            ConsultoriaLogger.logSuccess(LogCategory.TCP_SERVER, "Servidor TCP/IP iniciado na porta %d", port);
+            ConsultoriaLogger.logInfo(LogCategory.TCP_SERVER, "Aguardando conexões de clientes...");
+            ConsultoriaLogger.logInfo(LogCategory.TCP_SERVER, "Pool de threads: 20 threads");
+            ConsultoriaLogger.logSeparator();
 
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
+                    ConsultoriaLogger.logTCPConnection(
+                        clientSocket.getInetAddress().getHostAddress(),
+                        clientSocket.getPort(),
+                        "Nova conexão recebida",
+                        true
+                    );
                     ClientHandler clientHandler = new ClientHandler(clientSocket, commandHandlers);
                     threadPool.execute(clientHandler);
                 } catch (IOException e) {
                     if (running) {
-                        log.error("Erro ao aceitar conexão", e);
+                        ConsultoriaLogger.logError(LogCategory.TCP_SERVER, "Aceitar conexão", e);
                     }
                 }
             }
         } catch (IOException e) {
-            log.error("Erro ao iniciar servidor TCP/IP", e);
+            ConsultoriaLogger.logError(LogCategory.TCP_SERVER, "Inicializar servidor", e);
         }
     }
 

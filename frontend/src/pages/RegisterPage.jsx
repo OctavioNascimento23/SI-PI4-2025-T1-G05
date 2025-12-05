@@ -59,8 +59,8 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-light via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-            <div className="bg-white dark:bg-gray-800 p-10 rounded-2xl shadow-soft dark:shadow-none border border-gray-100 dark:border-gray-700 w-full max-w-md transition-all duration-300">
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+            <div className="bg-gray-800 p-10 rounded-2xl shadow-soft border border-gray-700 w-full max-w-md transition-all duration-300">
                 {/* Logo/Brand */}
                 <div className="flex justify-center mb-6">
                     <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
@@ -72,13 +72,13 @@ const RegisterPage = () => {
 
                 {/* Title */}
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Criar Conta</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Junte-se à nossa plataforma</p>
+                    <h2 className="text-3xl font-bold text-white mb-2">Criar Conta</h2>
+                    <p className="text-gray-400">Junte-se a nós e comece a collaborar</p>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                    <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg">
+                    <div className="mb-4 p-3 bg-red-900/30 border border-red-800 text-red-300 rounded-lg">
                         {error}
                     </div>
                 )}
@@ -86,39 +86,39 @@ const RegisterPage = () => {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Nome Completo</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Nome Completo</label>
                         <input
                             type="text"
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="Seu nome"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Email</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Email</label>
                         <input
                             type="email"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="seu@email.com"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Senha</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Senha</label>
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="••••••••"
                             required
                             minLength={6}
@@ -126,13 +126,13 @@ const RegisterPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Confirmar Senha</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Confirmar Senha</label>
                         <input
                             type="password"
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                             placeholder="••••••••"
                             required
                             minLength={6}
@@ -140,12 +140,12 @@ const RegisterPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">Tipo de Conta</label>
+                        <label className="block text-gray-300 font-semibold mb-2">Tipo de Conta</label>
                         <select
                             name="role"
                             value={formData.role}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                         >
                             <option value="USER">Cliente - Preciso de ajuda</option>
                             <option value="CONSULTANT">Consultor - Quero ajudar</option>
@@ -163,9 +163,9 @@ const RegisterPage = () => {
 
                 {/* Login Link */}
                 <div className="mt-6 text-center">
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-gray-400">
                         Já tem uma conta?{' '}
-                        <Link to="/login" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+                        <Link to="/login" className="text-blue-400 font-bold hover:underline">
                             Fazer Login
                         </Link>
                     </p>
