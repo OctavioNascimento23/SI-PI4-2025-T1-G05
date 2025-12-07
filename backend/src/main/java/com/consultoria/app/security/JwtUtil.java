@@ -1,3 +1,4 @@
+// Criado por Gabriel dos Santos
 package com.consultoria.app.security;
 
 import io.jsonwebtoken.Claims;

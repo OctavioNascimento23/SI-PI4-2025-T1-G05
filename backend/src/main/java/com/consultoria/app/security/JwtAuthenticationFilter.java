@@ -1,3 +1,4 @@
+// Criado por Felipe Lona
 package com.consultoria.app.security;
 
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,3 +1,4 @@
+-- Criado por Octavio Nascimento
 -- PostgreSQL schema for Consultoria App
 -- Safe to run multiple times: uses IF NOT EXISTS and CREATE TYPE IF NOT EXISTS guarded by DO blocks
 

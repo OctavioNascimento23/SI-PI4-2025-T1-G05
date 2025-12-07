@@ -1,3 +1,4 @@
+// Criado por Gabriel dos Santos
 package com.consultoria.app.model;
 
 import javax.persistence.*;

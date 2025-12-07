@@ -1,3 +1,4 @@
+// Criado por Ítalo de Souza
 import React, { useState } from 'react';
 
 const StarRating = ({ rating = 0, onRate, readonly = false, size = 'md' }) => {
