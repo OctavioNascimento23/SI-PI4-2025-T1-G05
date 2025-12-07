@@ -1,3 +1,4 @@
+// Criado por Ítalo de Souza
 // Cliente TCP/IP via WebSocket para comunicação com servidor
 class TCPClient {
     constructor() {

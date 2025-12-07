@@ -1,3 +1,4 @@
+// Criado por Gabriel dos Santos
 import api from './api';
 
 const chatService = {

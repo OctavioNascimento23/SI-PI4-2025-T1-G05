@@ -1,3 +1,4 @@
+// Criado por Ítalo de Souza
 package com.consultoria.app.service;
 
 import com.consultoria.app.dto.AuthRequest;

@@ -1,3 +1,4 @@
+// Criado por Gabriel dos Santos
 package com.consultoria.app.config;
 
 import com.consultoria.app.security.JwtAuthenticationFilter;

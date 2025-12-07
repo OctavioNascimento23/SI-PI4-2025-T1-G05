@@ -1,3 +1,4 @@
+// Criado por Octavio Nascimento
 package com.consultoria.app.config;
 
 import com.consultoria.app.tcp.TCPBridge;

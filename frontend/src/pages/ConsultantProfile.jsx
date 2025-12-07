@@ -1,3 +1,4 @@
+// Criado por João Pedro da Silveira
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 

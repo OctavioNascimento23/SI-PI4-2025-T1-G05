@@ -1,3 +1,4 @@
+// Criado por Octavio Nascimento
 package com.consultoria.app.model;
 
 import javax.persistence.*;

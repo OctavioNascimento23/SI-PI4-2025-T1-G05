@@ -1,3 +1,4 @@
+// Criado por Ítalo de Souza
 import React, { useState } from 'react';
 
 const ImageUpload = ({ onUpload, currentImage, label = "Upload Image" }) => {

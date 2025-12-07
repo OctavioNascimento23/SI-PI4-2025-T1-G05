@@ -1,3 +1,4 @@
+// Criado por Gabriel dos Santos
 import tcpClient from './tcpClient';
 
 // Serviço de alto nível para comunicação TCP/IP

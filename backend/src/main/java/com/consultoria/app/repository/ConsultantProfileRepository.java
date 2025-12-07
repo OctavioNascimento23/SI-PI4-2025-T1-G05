@@ -1,3 +1,4 @@
+// Criado por Octavio Nascimento
 package com.consultoria.app.repository;
 
 import com.consultoria.app.model.ConsultantProfile;

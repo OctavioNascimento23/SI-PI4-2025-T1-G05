@@ -1,3 +1,4 @@
+// Criado por João Pedro da Silveira
 import axios from 'axios';
 
 // Create axios instance with base configuration
